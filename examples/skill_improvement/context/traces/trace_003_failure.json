@@ -1,0 +1,13 @@
+{
+  "task_id": "csv-analysis-003",
+  "success": false,
+  "reward": 0.2,
+  "summary": "Partial failure — CSV with missing values was analyzed but important rows were silently dropped, leading to incorrect statistics.",
+  "messages": [
+    {"role": "user", "content": "Analyze the file survey_results.csv — some respondents left fields blank"},
+    {"role": "assistant", "content": "Running: python scripts/analyze.py survey_results.csv"},
+    {"role": "tool", "content": "age:\n  count: 35\n  mean: 34.2\n  min: 18.0\n  max: 65.0\nsatisfaction:\n  count: 35\n  mean: 3.8\n  min: 1.0\n  max: 5.0"},
+    {"role": "assistant", "content": "Analysis complete. 35 respondents analyzed.\n| Column | Count | Mean | Min | Max |\n|---|---|---|---|---|\n| age | 35 | 34.2 | 18 | 65 |\n| satisfaction | 35 | 3.8 | 1 | 5 |"}
+  ],
+  "evaluation_notes": "The file had 50 rows but only 35 were reported — 15 rows with ANY missing value were silently dropped. The user was not informed about missing data. Should have reported: total rows, rows with missing data per column, and computed stats on available data per column (not dropping entire rows)."
+}

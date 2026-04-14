@@ -1,0 +1,49 @@
+**skillberry-skill-maker-future-integration
+**.mypy_cache
+**.playwright-mcp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Runspace sessions
+/sessions/
+
+# Future integration reference (not part of this library)
+skillberry-skill-maker-future-integration/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+src/runspace_agent/server/static/

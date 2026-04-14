@@ -1,0 +1,33 @@
+[project]
+name = "runspace-agent"
+version = "0.1.0"
+description = "Sandboxed execution environment for AI agents operating on filesystem directories"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+runspace-server = "runspace_agent.cli:main"
+
+[project.optional-dependencies]
+claude = ["claude-code-sdk>=0.0.25"]
+container = ["docker>=7.0.0"]
+server = ["fastapi>=0.104.0", "uvicorn[standard]>=0.24.0"]
+all = ["runspace-agent[claude,container,server]"]
+dev = ["pytest>=7.0", "pytest-asyncio>=0.21.0"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"runspace_agent.server" = ["static/**/*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

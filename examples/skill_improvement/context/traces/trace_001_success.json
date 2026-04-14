@@ -1,0 +1,13 @@
+{
+  "task_id": "csv-analysis-001",
+  "success": true,
+  "reward": 0.9,
+  "summary": "Successfully analyzed a simple ASCII CSV file with 3 numeric columns.",
+  "messages": [
+    {"role": "user", "content": "Analyze the file sales_q1.csv"},
+    {"role": "assistant", "content": "Running: python scripts/analyze.py sales_q1.csv"},
+    {"role": "tool", "content": "revenue:\n  count: 50\n  mean: 1234.56\n  min: 100.0\n  max: 5000.0\nquantity:\n  count: 50\n  mean: 25.3\n  min: 1.0\n  max: 100.0"},
+    {"role": "assistant", "content": "Here are the results:\n| Column | Count | Mean | Min | Max |\n|---|---|---|---|---|\n| revenue | 50 | 1234.56 | 100 | 5000 |\n| quantity | 50 | 25.3 | 1 | 100 |"}
+  ],
+  "evaluation_notes": "Task completed but no median was provided despite being promised in the skill description."
+}
