@@ -17,9 +17,40 @@ import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 from runspace_agent.agents import Workspace, create_default_agent
 from runspace_agent.sandbox import build_hooks_config
+
+
+def _build_options_from_config(config: dict[str, Any]) -> Any:
+    """Build a ClaudeCodeOptions from the JSON entrypoint config."""
+    from claude_code_sdk import ClaudeCodeOptions
+
+    kwargs: dict[str, Any] = {}
+
+    settings = config.get("settings") or {}
+    env_vars = {k: str(v) for k, v in settings.get("env", {}).items()}
+    if env_vars:
+        kwargs["env"] = env_vars
+
+    model = settings.get("model")
+    if model:
+        kwargs["model"] = model
+
+    permissions = settings.get("permissions", {})
+    if permissions.get("allow"):
+        kwargs["allowed_tools"] = list(permissions["allow"])
+
+    max_turns = config.get("max_turns")
+    if max_turns is not None:
+        kwargs["max_turns"] = max_turns
+
+    mcp_servers = config.get("mcp_servers")
+    if mcp_servers:
+        kwargs["mcp_servers"] = mcp_servers
+
+    return ClaudeCodeOptions(**kwargs)
 
 
 def main() -> None:
@@ -43,11 +74,8 @@ def main() -> None:
     hooks = build_hooks_config(cwd)
 
     # Create the agent via the generic factory
-    agent = create_default_agent(
-        settings=config.get("settings"),
-        max_turns=config.get("max_turns", 300),
-        mcp_servers=config.get("mcp_servers"),
-    )
+    options = _build_options_from_config(config)
+    agent = create_default_agent(options=options)
 
     workspace = Workspace(
         editable_dir=editable_dir,

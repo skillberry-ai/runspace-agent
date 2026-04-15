@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useSession, useSessions, useSessionDiff, useSessionConversation, useSessionSummary } from '../api/hooks';
+import { useSession, useSessions, useSessionDiff, useSessionConversation, useSessionSummary, useRenameSession } from '../api/hooks';
 import StatusBadge from '../components/StatusBadge';
 import Tabs from '../components/Tabs';
 import FileTree from '../components/FileTree';
@@ -33,6 +33,9 @@ export default function SessionDetail() {
 
   const sessionId = rawId || '';
   const { data: session, isLoading, error } = useSession(sessionId);
+  const renameSession = useRenameSession();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
 
   // Lazy-load tab data
   const { data: diffs } = useSessionDiff(sessionId, activeTab === 'Diff');
@@ -68,9 +71,53 @@ export default function SessionDetail() {
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <h1 className="text-xl font-mono text-text-primary">{session.session_id}</h1>
+        {isEditing ? (
+          <input
+            autoFocus
+            className="text-xl font-semibold text-text-primary bg-surface-light border border-border rounded px-2 py-1 focus:outline-none focus:border-accent"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const trimmed = editName.trim();
+                if (trimmed) {
+                  renameSession.mutate({ sessionId, name: trimmed });
+                }
+                setIsEditing(false);
+              } else if (e.key === 'Escape') {
+                setIsEditing(false);
+              }
+            }}
+            onBlur={() => {
+              const trimmed = editName.trim();
+              if (trimmed) {
+                renameSession.mutate({ sessionId, name: trimmed });
+              }
+              setIsEditing(false);
+            }}
+          />
+        ) : (
+          <div className="flex items-center gap-2 group">
+            <h1 className={`text-xl text-text-primary ${session.name ? 'font-semibold' : 'font-mono'}`}>
+              {session.name || session.session_id}
+            </h1>
+            <button
+              onClick={() => { setEditName(session.name || ''); setIsEditing(true); }}
+              className="text-text-muted hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              title="Edit session name"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                <path d="m15 5 4 4" />
+              </svg>
+            </button>
+          </div>
+        )}
         <StatusBadge status={session.status} />
       </div>
+      {session.name && (
+        <div className="font-mono text-xs text-text-muted mb-4 -mt-3">{session.session_id}</div>
+      )}
 
       {/* Metadata grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
@@ -136,7 +183,11 @@ export default function SessionDetail() {
       {activeTab === 'Diff' && (
         <div>
           {!diffs ? (
-            <div className="text-text-muted text-sm py-4">Loading diffs...</div>
+            <div className="text-text-muted text-sm py-4">
+              {session.status === 'running' || session.status === 'pending'
+                ? 'Agent is running — diffs will be available once the session completes.'
+                : 'Loading diffs...'}
+            </div>
           ) : (
             <DiffView diffs={diffs} />
           )}
@@ -146,7 +197,11 @@ export default function SessionDetail() {
       {activeTab === 'Summary' && (
         <div className="bg-surface rounded-lg border border-border p-6">
           {!summary ? (
-            <div className="text-text-muted text-sm">Loading summary...</div>
+            <div className="text-text-muted text-sm">
+              {session.status === 'running' || session.status === 'pending'
+                ? 'Agent is running — summary will be available once the session completes.'
+                : 'Loading summary...'}
+            </div>
           ) : summary.content ? (
             <MarkdownContent content={summary.content} />
           ) : (
@@ -158,7 +213,11 @@ export default function SessionDetail() {
       {activeTab === 'Conversation' && (
         <div>
           {!conversation ? (
-            <div className="text-text-muted text-sm py-4">Loading conversation...</div>
+            <div className="text-text-muted text-sm py-4">
+              {session.status === 'running' || session.status === 'pending'
+                ? 'Agent is running — conversation will be available once the session completes.'
+                : 'Loading conversation...'}
+            </div>
           ) : (
             <ConversationView messages={conversation} />
           )}

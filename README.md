@@ -18,7 +18,21 @@ full isolation.
 ```bash
 # Create venv with Python 3.11
 uv venv --python 3.11
+```
 
+Activate the virtual environment:
+- On Linux/macOS:
+  ```bash
+  source .venv/bin/activate
+  ```
+- On Windows:
+  ```powershell
+    .venv\Scripts\activate
+    ```
+
+Select the installation option based on your needs:
+
+```bash
 # Core library only
 uv pip install -e .
 
@@ -46,7 +60,7 @@ The fastest way to get started is with the built-in server:
 
 ```bash
 uv pip install -e ".[all]"
-runspace-server
+runspace-srv
 ```
 
 This will:
@@ -54,36 +68,44 @@ This will:
 2. Build the `runspace-agent:latest` image if it doesn't exist
 3. Start the API server + React UI on port 6767
 
-Open **http://localhost:6767/ui** in your browser.
+Open in your browser:
+- **http://localhost:6767/ui** — Web UI (React SPA)
+- **http://localhost:6767/docs** — Swagger interactive API docs
+- **http://localhost:6767/redoc** — ReDoc API docs
 
 ```bash
 # Custom port
-runspace-server --port 9000
+runspace-srv --port 9000
 
-# Disable auto-reload (reload is on by default)
-runspace-server --no-reload
+# Enable auto-reload on code changes (off by default)
+runspace-srv --watch
 
 # Custom session TTL (default: 8 hours)
-runspace-server --session-ttl 24
+runspace-srv --session-ttl 24
 ```
 
 ### Python API
 
+Configure the agent using `ClaudeCodeOptions` from the Claude Code SDK:
+
 ```python
 import asyncio
 from pathlib import Path
+from claude_code_sdk import ClaudeCodeOptions
 from runspace_agent import RunspaceSession, run_agent
 from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
-agent = ClaudeCodeAgent(
-    settings={
-        "env": {
-            "ANTHROPIC_BASE_URL": "https://your-api-proxy.example.com",
-            "ANTHROPIC_AUTH_TOKEN": "sk-...",
-            "ANTHROPIC_MODEL": "claude-opus-4-6",
-        },
+options = ClaudeCodeOptions(
+    env={
+        "ANTHROPIC_BASE_URL": "https://your-api-proxy.example.com",
+        "ANTHROPIC_AUTH_TOKEN": "sk-...",
+        "ANTHROPIC_MODEL": "claude-opus-4-6",
     },
+    max_turns=50,
+    # Any ClaudeCodeOptions field is supported — model, mcp_servers,
+    # allowed_tools, disallowed_tools, append_system_prompt, etc.
 )
+agent = ClaudeCodeAgent(options=options)
 
 session = RunspaceSession(
     editable_dir=Path("./my_project"),
@@ -118,11 +140,28 @@ class MyCustomAgent:
 
 ### Built-in: ClaudeCodeAgent
 
-Uses the Claude Agent SDK to run Claude Code headlessly with:
-- `permission_mode="bypassPermissions"` — fully autonomous
-- All tools enabled (Read, Write, Edit, Bash, Glob, Grep, Skill, WebSearch, WebFetch, Agent, LSP)
-- No AskHumanQuestion — the agent works without human interaction
-- Full settings support (custom API URL, auth token, model, plugins)
+Uses the Claude Agent SDK to run Claude Code headlessly. Configure it by passing
+a `ClaudeCodeOptions` object — every SDK field is supported and automatically
+forwarded. The agent **enforces** the following fields for security (your values
+are overridden):
+
+| Field | Enforced value | Reason |
+|-------|---------------|--------|
+| `permission_mode` | `"bypassPermissions"` | Headless container, no human to approve |
+| `cwd` | workspace directory | Sandbox boundary |
+| `system_prompt` | Headless prompt | Prevents interactive prompts |
+| `hooks` | Sandbox hooks | Filesystem isolation enforcement |
+
+If you don't set these, sensible defaults are applied:
+
+| Field | Default |
+|-------|---------|
+| `allowed_tools` | Read, Write, Edit, Bash, Glob, Grep, Skill, WebSearch, WebFetch, Agent, LSP |
+| `max_turns` | 300 |
+
+Everything else is fully configurable: `model`, `env`, `mcp_servers`,
+`append_system_prompt`, `allowed_tools`, `disallowed_tools`, `add_dirs`,
+`extra_args`, `user`, etc.
 
 ### Skills
 
@@ -190,8 +229,40 @@ In **container mode**, Docker provides true isolation:
 | `GET` | `/sessions/{id}/summary` | Agent-generated session summary |
 | `GET` | `/skills` | List preinstalled/bundled skills |
 | `GET` | `/ui` | Web UI (React SPA) |
+| `GET` | `/docs` | Swagger interactive API docs |
+| `GET` | `/redoc` | ReDoc API docs |
 
 Sessions auto-cleanup after 8 hours of inactivity (configurable with `--session-ttl`).
+
+### Session Lifecycle
+
+Sessions are **single-use by design**. There is no recall or resume within the
+same session — each run gets a fresh session with its own context and editable
+directory.
+
+To "recall" the agent (e.g., run another improvement iteration), create a **new
+session** with the updated editable directory and fresh context. This avoids the
+complexity of maintaining conversation history, summarization across runs, and
+stale state.
+
+Sessions are automatically cleaned up after the configured TTL (default: 8
+hours of inactivity, set via `--session-ttl`). If you want to free disk space
+on the host (or container volume) immediately rather than waiting for the
+auto-cleanup, delete the session explicitly after downloading the results:
+
+```bash
+# 1. Download the improved editable directory
+curl -O http://localhost:6767/sessions/{session_id}/editable.zip
+
+# 2. (Optional) Delete the session immediately to free space
+#    Otherwise it will be auto-deleted after the session TTL expires
+curl -X DELETE http://localhost:6767/sessions/{session_id}
+
+# 3. Next iteration: create a new session with the updated files
+curl -X POST http://localhost:6767/run \
+  -H "Content-Type: application/json" \
+  -d '{"editable_dir": "./updated_skill", "context_dir": "./new_context", "prompt": "..."}'
+```
 
 ### Manual Start (Advanced)
 
@@ -225,7 +296,7 @@ There are two ways to work with the UI:
 
 ### Recommended workflow
 
-1. Start the backend: `runspace-server`
+1. Start the backend: `runspace-srv`
 2. Start the Vite dev server: `cd frontend && npm run dev`
 3. Open **http://localhost:5173/ui** — edits to frontend code update automatically
 4. When done, run `npm run build` to update the production UI at `localhost:6767/ui`
@@ -258,6 +329,44 @@ docker container prune
 uv pip install -e ".[dev]"
 uv run pytest tests/
 ```
+
+## Examples
+
+Ready-to-run examples live in `examples/`. Each example supports three execution modes:
+
+| Mode | Command suffix | Description |
+|------|---------------|-------------|
+| `server` | Requires `runspace-srv` running | Sends a request to the HTTP server (recommended) |
+| `library-container` | Requires Docker | Calls the Python library directly, runs in Docker |
+| `library-local` | No Docker needed | Runs locally, modifies `editable/` in place |
+
+All modes require `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` environment variables.
+
+### Skill Improvement
+
+Fixes bugs in a skill based on execution traces and domain knowledge:
+
+```bash
+# Start the server first (in a separate terminal)
+runspace-srv
+
+# Then run the example
+uv run python examples/skill_improvement/run.py server
+```
+
+### Skillberry Store Skill
+
+Optimizes a skillberry-store skill (airline customer service for tau-bench) using traces and evaluation criteria:
+
+```bash
+# Start the server first (in a separate terminal)
+runspace-srv
+
+# Then run the example
+uv run python examples/skillberry_store_skill/run.py server
+```
+
+Replace `server` with `library-container` or `library-local` for alternative modes.
 
 ## Skillberry Integration
 

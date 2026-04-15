@@ -32,6 +32,44 @@ if TYPE_CHECKING:
     from runspace_agent.core import RunspaceSession
 
 
+def _serialize_agent_options(agent_options: Any) -> dict[str, Any]:
+    """Extract JSON-serializable fields from a ClaudeCodeOptions for the container config.
+
+    The entrypoint inside the container reads these and reconstructs a
+    ClaudeCodeOptions object.
+    """
+    if agent_options is None:
+        return {}
+
+    result: dict[str, Any] = {}
+    settings: dict[str, Any] = {}
+
+    env = getattr(agent_options, "env", None)
+    if env:
+        settings["env"] = dict(env)
+
+    model = getattr(agent_options, "model", None)
+    if model:
+        settings["model"] = model
+
+    allowed_tools = getattr(agent_options, "allowed_tools", None)
+    if allowed_tools:
+        settings.setdefault("permissions", {})["allow"] = list(allowed_tools)
+
+    if settings:
+        result["settings"] = settings
+
+    max_turns = getattr(agent_options, "max_turns", None)
+    if max_turns is not None:
+        result["max_turns"] = max_turns
+
+    mcp_servers = getattr(agent_options, "mcp_servers", None)
+    if mcp_servers:
+        result["mcp_servers"] = dict(mcp_servers) if not isinstance(mcp_servers, (str, Path)) else str(mcp_servers)
+
+    return result
+
+
 def _import_docker() -> Any:
     try:
         import docker  # type: ignore[import-untyped]
@@ -128,23 +166,18 @@ def _run_ephemeral_blocking(
         "context_dir": "/workspace/agent_workspace/context",
     }
 
-    # Include agent settings from the session for the in-container entrypoint
-    if session.agent_settings:
-        config_data["settings"] = session.agent_settings
-    if session.agent_max_turns is not None:
-        config_data["max_turns"] = session.agent_max_turns
-    if session.mcp_servers:
-        config_data["mcp_servers"] = session.mcp_servers
+    # Include agent options in the config for the in-container entrypoint
+    config_data.update(_serialize_agent_options(session.agent_options))
 
     config_path = workspace_root / "config.json"
     config_path.write_text(json.dumps(config_data), encoding="utf-8")
 
-    # Build environment variables from agent settings
+    # Build environment variables from agent options
     env_vars: dict[str, str] = {}
-    if session.agent_settings:
-        env_vars.update(
-            {k: str(v) for k, v in session.agent_settings.get("env", {}).items()}
-        )
+    if session.agent_options is not None:
+        opt_env = getattr(session.agent_options, "env", None)
+        if opt_env:
+            env_vars.update({k: str(v) for k, v in opt_env.items()})
     env_vars["RUNSPACE_CONFIG"] = "/workspace/config.json"
 
     container = client.containers.run(
@@ -242,10 +275,7 @@ async def _run_persistent(
         "editable_dir": f"{agent_path}/editable",
         "context_dir": f"{agent_path}/context",
     }
-    if session.agent_settings:
-        config_data["settings"] = session.agent_settings
-    if session.agent_max_turns is not None:
-        config_data["max_turns"] = session.agent_max_turns
+    config_data.update(_serialize_agent_options(session.agent_options))
 
     config_json = json.dumps(config_data)
     container.exec_run(
@@ -254,9 +284,11 @@ async def _run_persistent(
 
     # Build environment for exec
     env_vars: list[str] = [f"RUNSPACE_CONFIG={session_path}/config.json"]
-    if session.agent_settings:
-        for k, v in session.agent_settings.get("env", {}).items():
-            env_vars.append(f"{k}={v}")
+    if session.agent_options is not None:
+        opt_env = getattr(session.agent_options, "env", None)
+        if opt_env:
+            for k, v in opt_env.items():
+                env_vars.append(f"{k}={v}")
 
     # Run the agent inside the agent workspace
     exit_code, output = container.exec_run(

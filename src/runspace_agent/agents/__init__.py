@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from runspace_agent.agents.base import AgentResult, FilesystemAgent, Workspace
+
+if TYPE_CHECKING:
+    from claude_code_sdk import ClaudeCodeOptions
 
 __all__ = [
     "AgentResult",
@@ -15,9 +18,7 @@ __all__ = [
 
 
 def create_default_agent(
-    settings: dict[str, Any] | None = None,
-    max_turns: int | None = None,
-    mcp_servers: dict[str, Any] | None = None,
+    options: ClaudeCodeOptions | None = None,
 ) -> FilesystemAgent:
     """Create the default agent (currently :class:`ClaudeCodeAgent`).
 
@@ -26,11 +27,4 @@ def create_default_agent(
     """
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
-    kwargs: dict[str, Any] = {}
-    if settings is not None:
-        kwargs["settings"] = settings
-    if max_turns is not None:
-        kwargs["max_turns"] = max_turns
-    if mcp_servers is not None:
-        kwargs["mcp_servers"] = mcp_servers
-    return ClaudeCodeAgent(**kwargs)
+    return ClaudeCodeAgent(options=options)

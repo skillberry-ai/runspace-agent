@@ -2,6 +2,7 @@ export type SessionStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 export interface SessionInfo {
   session_id: string;
+  name?: string | null;
   status: SessionStatus;
   created_at: string;
   last_accessed: string;

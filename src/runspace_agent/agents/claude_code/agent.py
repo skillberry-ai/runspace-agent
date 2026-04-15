@@ -7,9 +7,10 @@ Requires the optional ``claude-code-sdk`` dependency::
 
 from __future__ import annotations
 
+import dataclasses
 import time
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from runspace_agent.agents.base import AgentResult, Workspace
 from runspace_agent.agents.claude_code.defaults import (
@@ -18,6 +19,9 @@ from runspace_agent.agents.claude_code.defaults import (
     DEFAULT_SYSTEM_PROMPT,
 )
 
+if TYPE_CHECKING:
+    from claude_code_sdk import ClaudeCodeOptions
+
 
 class ClaudeCodeAgent:
     """Run a Claude Code agent inside a :class:`Workspace`.
@@ -25,15 +29,21 @@ class ClaudeCodeAgent:
     This is the built-in :class:`~runspace_agent.agents.base.FilesystemAgent`
     implementation backed by the Claude Agent SDK.
 
+    Users pass a :class:`~claude_code_sdk.ClaudeCodeOptions` object to
+    configure the agent.  The agent **enforces** the following fields
+    regardless of what the user sets:
+
+    * ``permission_mode`` → ``"bypassPermissions"`` (headless container)
+    * ``cwd`` → from the workspace (sandbox boundary)
+    * ``system_prompt`` → headless system prompt (no interactive prompts)
+    * ``hooks`` → from the workspace (sandbox enforcement)
+
+    If the user does not set ``allowed_tools`` or ``max_turns``, sensible
+    defaults are applied.
+
     Parameters:
-        settings: Full Claude Code settings dict (env, permissions, model,
-            plugins, ...).  Follows the ``settings.json`` schema.  The
-            ``settings["env"]`` entries are injected as environment variables
-            when launching the SDK.
-        max_turns: Maximum number of agentic turns before the agent is
-            stopped.
-        mcp_servers: Optional MCP server configurations passed through to
-            ``ClaudeCodeOptions.mcpServers``.
+        options: A :class:`~claude_code_sdk.ClaudeCodeOptions` instance.
+            When ``None``, a bare default is created at run time.
     """
 
     skills_folder_name: str = ".claude/skills"
@@ -43,60 +53,56 @@ class ClaudeCodeAgent:
         Path(__file__).resolve().parent.parent.parent.parent.parent / ".claude" / "skills"
     )
 
-    def __init__(
-        self,
-        settings: dict[str, Any] | None = None,
-        max_turns: int = DEFAULT_MAX_TURNS,
-        mcp_servers: dict[str, Any] | None = None,
-    ) -> None:
-        self.settings = settings or {}
-        self.max_turns = max_turns
-        self.mcp_servers = mcp_servers
+    def __init__(self, options: ClaudeCodeOptions | None = None) -> None:
+        self._user_options = options
         self.default_skills_dir: Path | None = self._DEFAULT_SKILLS_DIR
 
     async def run(self, workspace: Workspace) -> AgentResult:
         """Execute the Claude Code agent inside *workspace*."""
         query, ClaudeCodeOptions = self._import_sdk()
-        return await self._run_agent(query, ClaudeCodeOptions, workspace)
+        options = self._build_effective_options(ClaudeCodeOptions, workspace)
+        return await self._run_agent(query, options, workspace)
+
+    def _build_effective_options(
+        self,
+        ClaudeCodeOptions: type,
+        workspace: Workspace,
+    ) -> Any:
+        """Merge user options with enforced sandbox overrides.
+
+        Priority (highest to lowest):
+        1. Enforced fields (always override, non-negotiable)
+        2. User-provided fields (from self._user_options)
+        3. Sensible defaults (only if user left field at dataclass default)
+        """
+        base = self._user_options if self._user_options is not None else ClaudeCodeOptions()
+
+        overrides: dict[str, Any] = {}
+
+        # Defaults: fill in only if user did not set them
+        if not base.allowed_tools:
+            overrides["allowed_tools"] = list(DEFAULT_ALLOWED_TOOLS)
+
+        if base.max_turns is None:
+            overrides["max_turns"] = DEFAULT_MAX_TURNS
+
+        # Enforced fields: always override regardless of user input
+        overrides["permission_mode"] = "bypassPermissions"
+        overrides["cwd"] = str(workspace.cwd)
+        overrides["system_prompt"] = DEFAULT_SYSTEM_PROMPT
+
+        if workspace.hooks:
+            overrides["hooks"] = self._build_sdk_hooks(workspace.hooks)
+
+        return dataclasses.replace(base, **overrides)
 
     async def _run_agent(
         self,
         query: Any,
-        ClaudeCodeOptions: Any,
+        options: Any,
         workspace: Workspace,
     ) -> AgentResult:
-        """Build SDK options and iterate the agent loop."""
-        # Pass env vars directly to the SDK (no os.environ manipulation)
-        env_vars = {k: str(v) for k, v in self.settings.get("env", {}).items()}
-
-        options_kwargs: dict[str, Any] = {
-            "allowed_tools": list(DEFAULT_ALLOWED_TOOLS),
-            "permission_mode": "bypassPermissions",
-            "cwd": str(workspace.cwd),
-            "max_turns": self.max_turns,
-            "system_prompt": DEFAULT_SYSTEM_PROMPT,
-            "env": env_vars,
-        }
-
-        if self.mcp_servers:
-            options_kwargs["mcp_servers"] = self.mcp_servers
-
-        # Merge model from settings if provided
-        model = self.settings.get("model")
-        if model:
-            options_kwargs["model"] = model
-
-        # Merge permission allow-list from settings if provided
-        permissions = self.settings.get("permissions", {})
-        if permissions.get("allow"):
-            options_kwargs["allowed_tools"].extend(permissions["allow"])
-
-        # Convert sandbox hooks to SDK HookMatcher objects
-        if workspace.hooks:
-            options_kwargs["hooks"] = self._build_sdk_hooks(workspace.hooks)
-
-        options = ClaudeCodeOptions(**options_kwargs)
-
+        """Iterate the agent loop with pre-built options."""
         messages: list[Any] = []
         total_tokens = 0
         start_ms = int(time.time() * 1000)
@@ -107,8 +113,6 @@ class ClaudeCodeAgent:
         ):
             messages.append(message)
 
-            # Extract token usage from the ResultMessage (always last).
-            # ResultMessage.usage is a dict, not an object.
             if type(message).__name__ == "ResultMessage":
                 usage = getattr(message, "usage", None)
                 if isinstance(usage, dict):

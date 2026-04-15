@@ -18,6 +18,7 @@ class SessionStatus(str, Enum):
 class RunRequest(BaseModel):
     """POST /run request body."""
 
+    name: str | None = None
     editable_dir: str
     context_dir: str
     prompt: str
@@ -38,10 +39,17 @@ class RunRequest(BaseModel):
     container_mode: str = "ephemeral"
 
 
+class RenameRequest(BaseModel):
+    """PATCH /sessions/{session_id} request body."""
+
+    name: str
+
+
 class SessionInfo(BaseModel):
     """Session metadata."""
 
     session_id: str
+    name: str | None = None
     status: SessionStatus
     created_at: str
     last_accessed: str

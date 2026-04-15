@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [project.scripts]
-runspace-server = "runspace_agent.cli:main"
+runspace-srv = "runspace_agent.cli:main"
 
 [project.optional-dependencies]
 claude = ["claude-code-sdk>=0.0.25"]

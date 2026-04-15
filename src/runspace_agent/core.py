@@ -33,13 +33,14 @@ class RunspaceSession(BaseModel):
         context_description: Optional description of what context_dir contains.
         agent: A :class:`FilesystemAgent` instance.  When ``None``,
             a default agent is created via :func:`~runspace_agent.agents.create_default_agent`.
+        agent_options: A :class:`~claude_code_sdk.ClaudeCodeOptions` instance
+            passed to the default agent when ``agent`` is ``None``.
         skills_dir: Optional directory of custom skills to load into the workspace.
         preinstalled_skills: Which preinstalled skills to include.
             ``None`` (default) includes all.  An explicit list filters
             by name (e.g. ``["mcp-builder"]``).  ``[]`` skips all.
         mode: Execution mode — ``"local"`` or ``"container"``.
         output_zip: Whether to zip the editable directory after the agent runs.
-        mcp_servers: Optional MCP server configs passed to the agent.
         container_image: Docker image for container mode.
         container_memory: Memory limit for the container.
         container_cpus: CPU limit for the container.
@@ -55,13 +56,11 @@ class RunspaceSession(BaseModel):
     editable_description: str = ""
     context_description: str = ""
     agent: Any = None  # FilesystemAgent instance
-    agent_settings: dict[str, Any] | None = None
-    agent_max_turns: int | None = None
+    agent_options: Any = None  # ClaudeCodeOptions instance
     skills_dir: Path | None = None
     preinstalled_skills: list[str] | None = None
     mode: Literal["local", "container"] = "local"
     output_zip: bool = False
-    mcp_servers: dict[str, Any] | None = None
     # Container settings
     container_image: str = "runspace-agent:latest"
     container_memory: str = "4g"
@@ -96,14 +95,13 @@ def _resolve_agent(session: RunspaceSession) -> FilesystemAgent:
         return session.agent  # type: ignore[return-value]
     from runspace_agent.agents import create_default_agent
 
-    return create_default_agent(
-        settings=session.agent_settings,
-        max_turns=session.agent_max_turns,
-        mcp_servers=session.mcp_servers,
-    )
+    return create_default_agent(options=session.agent_options)
 
 
-async def run_agent(session: RunspaceSession) -> RunspaceResult:
+async def run_agent(
+    session: RunspaceSession,
+    session_id: str | None = None,
+) -> RunspaceResult:
     """Execute an agent session.
 
     This is the main entry point for the library.  It validates inputs,
@@ -111,12 +109,17 @@ async def run_agent(session: RunspaceSession) -> RunspaceResult:
 
     Parameters:
         session: A :class:`RunspaceSession` describing what to run.
+        session_id: Optional pre-generated session ID.  When called from
+            the server, the API layer passes its own ID so that the
+            in-memory record and the on-disk workspace share the same
+            identifier.  When ``None`` a random ID is generated.
 
     Returns:
         A :class:`RunspaceResult` with the outcome.
     """
     start = time.monotonic()
-    session_id = uuid.uuid4().hex[:12]
+    if session_id is None:
+        session_id = uuid.uuid4().hex[:12]
 
     # Validate directories
     if not session.editable_dir.is_dir():

@@ -31,6 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from runspace_agent.core import RunspaceSession, run_agent
 from runspace_agent.server.models import (
     FileEntry,
+    RenameRequest,
     RunRequest,
     SessionDetail,
     SessionInfo,
@@ -60,19 +61,21 @@ async def startup() -> None:
 @app.post("/run", response_model=SessionInfo)
 async def create_run(req: RunRequest) -> SessionInfo:
     """Create a new session and start the agent in the background."""
+    from runspace_agent.server._options import build_options_from_request
+
+    agent_options = build_options_from_request(req)
+
     session = RunspaceSession(
         editable_dir=Path(req.editable_dir),
         context_dir=Path(req.context_dir),
         prompt=req.prompt,
         editable_description=req.editable_description,
         context_description=req.context_description,
-        agent_settings=req.agent_settings,
-        agent_max_turns=req.agent_max_turns,
+        agent_options=agent_options,
         skills_dir=Path(req.skills_dir) if req.skills_dir else None,
         preinstalled_skills=req.preinstalled_skills,
         mode=req.mode,  # type: ignore[arg-type]
         output_zip=req.output_zip,
-        mcp_servers=req.mcp_servers,
         container_image=req.container_image,
         container_memory=req.container_memory,
         container_cpus=req.container_cpus,
@@ -81,23 +84,24 @@ async def create_run(req: RunRequest) -> SessionInfo:
 
     # Generate a stable session ID upfront so the UI only ever sees one entry.
     preliminary_id = uuid.uuid4().hex[:12]
-    record = manager.register(preliminary_id)
+    record = manager.register(preliminary_id, name=req.name)
+
+    # Set workspace_dir eagerly so the orphan scanner skips this directory
+    # while the agent is still running.
+    record.workspace_dir = Path(tempfile.gettempdir()) / f"runspace_{preliminary_id}"
 
     async def _run() -> None:
         record.status = SessionStatus.RUNNING
         t0 = time.monotonic()
         record.started_at = t0
         try:
-            result = await run_agent(session)
+            result = await run_agent(session, session_id=preliminary_id)
         except Exception as exc:
             record.status = SessionStatus.FAILED
             record.error = f"{type(exc).__name__}: {exc}"
             record.duration_seconds = round(time.monotonic() - t0, 2)
             raise
 
-        # Update the record with the real session ID from run_agent
-        real_id = result.session_id
-        record.session_id = real_id
         record.status = SessionStatus.COMPLETED if result.success else SessionStatus.FAILED
         record.duration_seconds = result.duration_seconds
         record.total_tokens = result.agent_result.total_tokens
@@ -105,17 +109,14 @@ async def create_run(req: RunRequest) -> SessionInfo:
         record.error = result.agent_result.error
         if result.output_zip_path:
             record.output_zip_path = result.output_zip_path
-        record.workspace_dir = manager.get_workspace_for_session(real_id)
-        # Re-register under the real session_id
-        if real_id != preliminary_id:
-            manager._sessions.pop(preliminary_id, None)
-            manager._sessions[real_id] = record
+        record.workspace_dir = manager.get_workspace_for_session(preliminary_id)
 
     task = asyncio.create_task(_run())
     record.task = task
 
     return SessionInfo(
         session_id=record.session_id,
+        name=record.name,
         status=record.status,
         created_at=record.created_at.isoformat(),
         last_accessed=record.last_accessed.isoformat(),
@@ -132,11 +133,19 @@ def _effective_duration(r: Any) -> float | None:
 
 
 @app.get("/sessions", response_model=list[SessionInfo])
-async def list_sessions() -> list[SessionInfo]:
-    """List all sessions."""
+async def list_sessions(status: SessionStatus | None = None) -> list[SessionInfo]:
+    """List all sessions, most recently created first.
+
+    Optionally filter by *status* (e.g. ``?status=completed``).
+    """
+    records = manager.list_sessions()
+    if status is not None:
+        records = [r for r in records if r.status == status]
+    records.sort(key=lambda r: r.created_at, reverse=True)
     return [
         SessionInfo(
             session_id=r.session_id,
+            name=getattr(r, "name", None),
             status=r.status,
             created_at=r.created_at.isoformat(),
             last_accessed=r.last_accessed.isoformat(),
@@ -144,8 +153,15 @@ async def list_sessions() -> list[SessionInfo]:
             duration_seconds=_effective_duration(r),
             error=r.error,
         )
-        for r in manager.list_sessions()
+        for r in records
     ]
+
+
+@app.delete("/sessions")
+async def delete_all_sessions() -> dict[str, Any]:
+    """Delete every session and its workspace."""
+    count = manager.remove_all_sessions()
+    return {"status": "deleted", "count": count}
 
 
 @app.get("/sessions/{session_id}", response_model=SessionDetail)
@@ -157,6 +173,7 @@ async def get_session(session_id: str) -> SessionDetail:
     if record:
         detail = SessionDetail(
             session_id=record.session_id,
+            name=record.name,
             status=record.status,
             created_at=record.created_at.isoformat(),
             last_accessed=record.last_accessed.isoformat(),
@@ -170,12 +187,15 @@ async def get_session(session_id: str) -> SessionDetail:
     elif workspace:
         # Session not in manager but workspace exists on disk (e.g. after server restart)
         from datetime import datetime
+        st = workspace.stat()
+        elapsed = st.st_mtime - st.st_ctime
         detail = SessionDetail(
             session_id=session_id,
             status=SessionStatus.COMPLETED,
-            created_at=datetime.fromtimestamp(workspace.stat().st_ctime).isoformat(),
-            last_accessed=datetime.fromtimestamp(workspace.stat().st_mtime).isoformat(),
+            created_at=datetime.fromtimestamp(st.st_ctime).isoformat(),
+            last_accessed=datetime.fromtimestamp(st.st_mtime).isoformat(),
             workspace_dir=str(workspace),
+            duration_seconds=round(elapsed, 2) if elapsed > 0 else None,
         )
     else:
         raise HTTPException(404, f"Session {session_id} not found")
@@ -193,6 +213,25 @@ async def delete_session(session_id: str) -> dict[str, str]:
     if not manager.remove_session(session_id):
         raise HTTPException(404, f"Session {session_id} not found")
     return {"status": "deleted", "session_id": session_id}
+
+
+@app.patch("/sessions/{session_id}", response_model=SessionInfo)
+async def rename_session(session_id: str, req: RenameRequest) -> SessionInfo:
+    """Rename a session."""
+    if not manager.rename(session_id, req.name):
+        raise HTTPException(404, f"Session {session_id} not found")
+    record = manager.get(session_id)
+    assert record is not None
+    return SessionInfo(
+        session_id=record.session_id,
+        name=record.name,
+        status=record.status,
+        created_at=record.created_at.isoformat(),
+        last_accessed=record.last_accessed.isoformat(),
+        workspace_dir=str(record.workspace_dir) if record.workspace_dir else None,
+        duration_seconds=_effective_duration(record),
+        error=record.error,
+    )
 
 
 # ---------- Skills ----------

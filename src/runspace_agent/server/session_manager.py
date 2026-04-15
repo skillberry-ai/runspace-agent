@@ -19,8 +19,9 @@ from runspace_agent.server.models import SessionStatus
 class SessionRecord:
     """In-memory record of a session."""
 
-    def __init__(self, session_id: str, workspace_dir: Path | None = None) -> None:
+    def __init__(self, session_id: str, workspace_dir: Path | None = None, name: str | None = None) -> None:
         self.session_id = session_id
+        self.name = name
         self.status = SessionStatus.PENDING
         self.created_at = datetime.now(timezone.utc)
         self.last_accessed = datetime.now(timezone.utc)
@@ -79,10 +80,19 @@ class SessionManager:
         for sid in stale_ids:
             self.remove_session(sid)
 
-    def register(self, session_id: str, workspace_dir: Path | None = None) -> SessionRecord:
-        record = SessionRecord(session_id, workspace_dir)
+    def register(self, session_id: str, workspace_dir: Path | None = None, name: str | None = None) -> SessionRecord:
+        record = SessionRecord(session_id, workspace_dir, name=name)
         self._sessions[session_id] = record
         return record
+
+    def rename(self, session_id: str, name: str) -> bool:
+        """Rename a session. Returns True if found, False otherwise."""
+        record = self._sessions.get(session_id)
+        if record is None:
+            return False
+        record.name = name
+        record.touch()
+        return True
 
     def get(self, session_id: str) -> SessionRecord | None:
         record = self._sessions.get(session_id)
@@ -103,20 +113,20 @@ class SessionManager:
             return records
 
         known_ids = {r.session_id for r in records}
-        # Skip orphan scanning entirely if any session is still running —
-        # its workspace exists on disk but isn't registered under its real
-        # session_id yet, so the scanner would wrongly mark it COMPLETED.
-        has_active = any(
-            r.status in (SessionStatus.RUNNING, SessionStatus.PENDING)
+        # Collect workspace dirs of active sessions so we can skip them
+        # during the orphan scan (their workspace exists on disk but isn't
+        # registered under the real session_id yet).
+        active_dirs = {
+            r.workspace_dir.resolve()
             for r in records
-        )
-        if has_active:
-            return records
+            if r.status in (SessionStatus.RUNNING, SessionStatus.PENDING)
+            and r.workspace_dir is not None
+        }
         temp_base = Path(tempfile.gettempdir())
         for entry in temp_base.iterdir():
             if entry.is_dir() and entry.name.startswith("runspace_"):
                 sid = entry.name[len("runspace_"):]
-                if sid and sid not in known_ids:
+                if sid and sid not in known_ids and entry.resolve() not in active_dirs:
                     rec = SessionRecord(sid, workspace_dir=entry)
                     rec.status = SessionStatus.COMPLETED
                     rec.created_at = datetime.fromtimestamp(
@@ -136,6 +146,15 @@ class SessionManager:
                             if rec.duration_ms:
                                 rec.duration_seconds = round(rec.duration_ms / 1000, 2)
                         except Exception:
+                            pass
+                    # Fallback: estimate duration from filesystem timestamps
+                    if rec.duration_seconds is None:
+                        try:
+                            st = entry.stat()
+                            elapsed = st.st_mtime - st.st_ctime
+                            if elapsed > 0:
+                                rec.duration_seconds = round(elapsed, 2)
+                        except OSError:
                             pass
                     records.append(rec)
         return records
@@ -157,6 +176,31 @@ class SessionManager:
             return True
 
         return record is not None
+
+    def remove_all_sessions(self) -> int:
+        """Remove every session (in-memory and orphaned on disk).
+
+        Returns the number of sessions removed.
+        """
+        count = 0
+
+        # 1. Clear in-memory sessions
+        for record in self._sessions.values():
+            if record.task and not record.task.done():
+                record.task.cancel()
+            if record.workspace_dir and record.workspace_dir.exists():
+                shutil.rmtree(record.workspace_dir, ignore_errors=True)
+            count += 1
+        self._sessions.clear()
+
+        # 2. Remove orphaned runspace_* workspace dirs from temp
+        temp_base = Path(tempfile.gettempdir())
+        for entry in temp_base.iterdir():
+            if entry.is_dir() and entry.name.startswith("runspace_"):
+                shutil.rmtree(entry, ignore_errors=True)
+                count += 1
+
+        return count
 
     def get_workspace_for_session(self, session_id: str) -> Path | None:
         """Return the workspace directory path for a session."""

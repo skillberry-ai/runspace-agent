@@ -110,6 +110,92 @@ In the editable directory you have an Anthropic skill with:
 - scripts/ — executable Python scripts.
 - references/ — reference documentation.
 
+## Skillberry Store Anthropic Skill Format
+
+The editable directory follows the Skillberry Store's Anthropic skill format.
+The prompt MUST explain this format to the agent so it understands the
+structure and purpose of each component:
+
+- **SKILL.md** — The main skill definition file. Contains the skill's
+  system-level instructions, behavioral guidelines, and constraints that
+  govern how the agent should act when the skill is active. This is the
+  most impactful file to modify.
+- **scripts/** — Executable Python scripts that the skill can invoke as
+  tools. Each script is a self-contained tool with defined inputs/outputs.
+  Modifying these changes the skill's available actions.
+- **references/** — Read-only reference documents (schemas, examples,
+  domain knowledge) that the skill can consult. These provide grounding
+  information but are not executed.
+- **assets/** — Static files (images, templates, configs) used by the
+  skill at runtime.
+
+The prompt should make the agent aware that this is a **structured skill
+package** — not a generic codebase — so changes should respect the format
+conventions (e.g., tool definitions in scripts/, instructions in SKILL.md).
+
+### Example Prompt Section
+
+Include something like the following in your prompt:
+
+```
+The editable directory is an Anthropic skill exported from the Skillberry
+Store. It follows a specific structure:
+- SKILL.md: The skill's core instructions and behavioral guidelines.
+  This is the primary file to update for improving agent behavior.
+- scripts/: Executable tool scripts. Each .py file is a tool the agent
+  can call. Modify these to fix tool-related failures.
+- references/: Reference documentation the skill consults for context.
+  Update these if traces show knowledge gaps.
+- assets/: Static assets used at runtime.
+
+When making changes, preserve this structure. Do not reorganize files
+or break the skill format conventions.
+```
+
+## Example Usage
+
+```python
+import asyncio
+from pathlib import Path
+from runspace_agent import RunspaceSession, run_agent
+from runspace_agent.agents.claude_code import ClaudeCodeAgent
+
+agent = ClaudeCodeAgent(
+    settings={
+        "env": {
+            "ANTHROPIC_BASE_URL": "https://your-proxy.example.com",
+            "ANTHROPIC_AUTH_TOKEN": "sk-...",
+            "ANTHROPIC_MODEL": "claude-opus-4-6",
+        },
+        "model": "opus[1m]",
+    },
+    max_turns=300,
+)
+
+session = RunspaceSession(
+    editable_dir=Path("./exported_skill"),
+    context_dir=Path("./context"),
+    prompt="""\
+You are a skill improvement specialist.
+
+In the context directory you have:
+- traces/ — agent execution trajectories showing task performance.
+  Each trace has a 'reward' (0.0-1.0) and 'success' (bool).
+- domain_knowledge/ — policy documents and environment descriptions.
+- performance_history/ — historical benchmark results.
+
+In the editable directory you have an Anthropic skill exported from the
+Skillberry Store. It follows a specific format:
+- SKILL.md — the skill's core instructions and behavioral guidelines.
+  This is the primary file to update for improving agent behavior.
+- scripts/ — executable tool scripts the agent can call. Modify these
+  to fix tool-related failures.
+- references/ — reference documentation the skill consults for context.
+  Update these if traces show domain knowledge gaps.
+- assets/ — static assets used at runtime.
+
+Preserve the skill format structure when making changes.
+
 Your task:
 1. Read ALL traces in context/traces/ to understand current performance.
 2. Identify failure patterns (low reward, success=false).
@@ -136,6 +222,37 @@ if result.success:
 else:
     print(f"Failed: {result.agent_result.error}")
 ```
+
+## Session Lifecycle and Cleanup
+
+Sessions are **single-use by design** — there is no recall or resume within the
+same session. Reusing sessions would require complex summarization per run and
+add unnecessary state management. Instead, to run another improvement iteration,
+create a **new session** with the updated editable directory and fresh context.
+
+Each pipeline run should:
+
+1. Create a new session and upload the current context + editable directory.
+2. Run the agent.
+3. Download the resulting `editable.zip`.
+4. (Optional) Delete the session immediately, or let it auto-cleanup.
+
+Sessions are automatically cleaned up after the configured TTL (default: 8
+hours of inactivity, set via `--session-ttl`). If you want to free disk space
+immediately rather than waiting for the auto-cleanup, delete the session
+explicitly:
+
+```bash
+# Download the improved skill
+curl -O http://localhost:6767/sessions/{session_id}/editable.zip
+
+# (Optional) Delete the session immediately to free space
+# Otherwise it will be auto-deleted after the session TTL expires
+curl -X DELETE http://localhost:6767/sessions/{session_id}
+```
+
+This ensures every pipeline run gets a clean slate with fresh context and
+the latest editable directory, avoiding stale state from previous runs.
 
 ## Wiring Back Into the Pipeline
 

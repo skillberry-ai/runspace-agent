@@ -4,5 +4,8 @@
       "mcp__stitch__generate_screen_from_text",
       "Bash(npm install:*)"
     ]
-  }
+  },
+  "additionalDirectories": [
+    "C:\\Users\\PrielHazan\\Downloads\\ConvoBoost\\skillberry-store\\skillberry-store_git"
+  ]
 }

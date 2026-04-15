@@ -1,4 +1,4 @@
-"""CLI entry point for ``runspace-server``.
+"""CLI entry point for ``runspace-srv``.
 
 Checks Docker availability, builds the container image if missing,
 then starts the FastAPI server.
@@ -45,7 +45,7 @@ def _check_docker_running(docker: str) -> None:
         )
     except subprocess.CalledProcessError:
         print(
-            "ERROR: Docker is not running.\nPlease start Docker Desktop and try again.",
+            "ERROR: Docker is not running.\nPlease ensure the Docker engine is installed and running, then try again.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -112,7 +112,7 @@ def _find_dockerfile() -> Path | None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="runspace-server",
+        prog="runspace-srv",
         description="Start the Runspace Agent server (checks Docker first).",
     )
     parser.add_argument(
@@ -127,9 +127,9 @@ def main() -> None:
         help=f"Host to bind to (default: {DEFAULT_HOST})",
     )
     parser.add_argument(
-        "--no-reload",
+        "--watch",
         action="store_true",
-        help="Disable auto-reload (reload is enabled by default)",
+        help="Enable auto-reload on code changes (disabled by default)",
     )
     parser.add_argument(
         "--session-ttl",
@@ -150,7 +150,9 @@ def main() -> None:
     # Start the server
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
     print(f"Starting Runspace Agent server on http://{display_host}:{args.port}")
-    print(f"UI: http://{display_host}:{args.port}/ui\n")
+    print(f"  UI:       http://{display_host}:{args.port}/ui")
+    print(f"  API docs: http://{display_host}:{args.port}/docs")
+    print(f"  ReDoc:    http://{display_host}:{args.port}/redoc\n")
 
     try:
         import uvicorn
@@ -166,7 +168,7 @@ def main() -> None:
         "runspace_agent.server.app:app",
         host=args.host,
         port=args.port,
-        reload=not args.no_reload,
+        reload=args.watch,
     )
 
 

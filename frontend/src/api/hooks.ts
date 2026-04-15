@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch, apiDelete } from './client';
+import { apiFetch, apiDelete, apiPatch } from './client';
 import type { SessionInfo, SessionDetail, FileEntry, DiffEntry, ConversationMessage } from './types';
 
 export function useSessions() {
@@ -72,6 +72,28 @@ export function useDeleteSession() {
     mutationFn: (sessionId: string) => apiDelete(`/sessions/${sessionId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
+  });
+}
+
+export function useDeleteAllSessions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiDelete('/sessions'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
+  });
+}
+
+export function useRenameSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, name }: { sessionId: string; name: string }) =>
+      apiPatch<SessionInfo>(`/sessions/${sessionId}`, { name }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session', variables.sessionId] });
     },
   });
 }

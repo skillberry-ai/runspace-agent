@@ -18,3 +18,13 @@ export async function apiDelete(path: string): Promise<void> {
   const res = await fetch(path, { method: 'DELETE' });
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
+
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
