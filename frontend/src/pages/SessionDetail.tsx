@@ -40,7 +40,7 @@ export default function SessionDetail() {
   // Lazy-load tab data
   const { data: diffs } = useSessionDiff(sessionId, activeTab === 'Diff');
   const { data: conversation } = useSessionConversation(sessionId, activeTab === 'Conversation');
-  const { data: summary } = useSessionSummary(sessionId, activeTab === 'Summary');
+  const { data: summary, error: summaryError } = useSessionSummary(sessionId, activeTab === 'Summary');
 
   if (isPending) {
     return (
@@ -197,7 +197,9 @@ export default function SessionDetail() {
 
       {activeTab === 'Summary' && (
         <div className="bg-surface rounded-lg border border-border p-6">
-          {!summary ? (
+          {summaryError ? (
+            <div className="text-text-muted text-sm">No summary available.</div>
+          ) : !summary ? (
             <div className="text-text-muted text-sm">
               {session.status === 'running' || session.status === 'pending'
                 ? 'Agent is running — summary will be available once the session completes.'

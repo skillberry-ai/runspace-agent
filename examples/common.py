@@ -23,7 +23,8 @@ def build_env(model: ClaudeModel | None = None) -> dict[str, str]:
     )
     return {
         "ANTHROPIC_BASE_URL": os.environ.get("ANTHROPIC_BASE_URL", "")
-        or os.environ.get("CLAUDE_CODE_LITELLM_BASE_URL", ""),
+        or os.environ.get("CLAUDE_CODE_LITELLM_BASE_URL", "")
+        or os.environ.get("IBM_THIRD_PARTY_API_BASE", ""),
         "ANTHROPIC_AUTH_TOKEN": os.environ.get("ANTHROPIC_AUTH_TOKEN", "")
         or os.environ.get("IBM_THIRD_PARTY_API_KEY", ""),
         "ANTHROPIC_MODEL": model_id,

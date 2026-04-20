@@ -216,7 +216,7 @@ async def get_session(session_id: str) -> SessionDetail:
     # Populate availability flags for conversation and summary
     if workspace:
         detail.has_conversation = (workspace / "conversation.json").is_file()
-        detail.has_summary = (workspace / "agent_workspace" / "summary.md").is_file()
+        detail.has_summary = (workspace / "agent_workspace" / "summary.md").is_file() or (workspace / "summary.md").is_file()
     return detail
 
 
@@ -425,6 +425,8 @@ async def get_summary(session_id: str) -> JSONResponse:
         raise HTTPException(404, f"Workspace for session {session_id} not found")
 
     summary_path = workspace / "agent_workspace" / "summary.md"
+    if not summary_path.is_file():
+        summary_path = workspace / "summary.md"
     if not summary_path.is_file():
         raise HTTPException(404, "Summary not found (agent may not have generated one)")
 
