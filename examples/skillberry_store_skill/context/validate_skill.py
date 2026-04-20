@@ -81,8 +81,12 @@ def validate_skill(skill_path: Path) -> tuple[bool, list[str]]:
         else:
             name = name.strip()
             if not re.match(r"^[a-z0-9-]+$", name):
+                bad_chars = set(re.findall(r"[^a-z0-9-]", name))
                 errors.append(
-                    f"FAIL: name '{name}' must be kebab-case (lowercase, digits, hyphens only)"
+                    f"FAIL: name '{name}' must be kebab-case (lowercase, digits, hyphens only). "
+                    f"Found invalid characters: {bad_chars}. "
+                    f"Note: underscores are NOT allowed — use hyphens instead "
+                    f"(e.g., 'my-skill' not 'my_skill')."
                 )
             elif name.startswith("-") or name.endswith("-") or "--" in name:
                 errors.append(
