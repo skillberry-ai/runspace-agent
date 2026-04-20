@@ -51,17 +51,19 @@ def _check_docker_running(docker: str) -> None:
         sys.exit(1)
 
 
-def _ensure_image(docker: str) -> None:
-    """Build the runspace-agent Docker image if it doesn't exist."""
-    result = subprocess.run(
-        [docker, "images", "-q", IMAGE_NAME],
-        capture_output=True,
-        text=True,
-    )
-    if result.stdout.strip():
-        return  # image exists
+def _ensure_image(docker: str, *, force_rebuild: bool = False) -> None:
+    """Build the runspace-agent Docker image if it doesn't exist or rebuild is forced."""
+    if not force_rebuild:
+        result = subprocess.run(
+            [docker, "images", "-q", IMAGE_NAME],
+            capture_output=True,
+            text=True,
+        )
+        if result.stdout.strip():
+            return  # image exists
 
-    print(f"Docker image '{IMAGE_NAME}' not found. Building...")
+    action = "Rebuilding" if force_rebuild else "Building"
+    print(f"{action} Docker image '{IMAGE_NAME}'...")
 
     # Find Dockerfile: next to the package root (editable install) or CWD
     dockerfile = _find_dockerfile()
@@ -137,6 +139,11 @@ def main() -> None:
         default=DEFAULT_SESSION_TTL_HOURS,
         help=f"Session TTL in hours before cleanup (default: {DEFAULT_SESSION_TTL_HOURS})",
     )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Force rebuild of the Docker image before starting",
+    )
     args = parser.parse_args()
 
     # Propagate session TTL (converted to seconds) to the server via environment variable
@@ -145,7 +152,7 @@ def main() -> None:
     # Pre-flight checks
     docker = _docker_bin()
     _check_docker_running(docker)
-    _ensure_image(docker)
+    _ensure_image(docker, force_rebuild=args.rebuild)
 
     # Start the server
     display_host = "localhost" if args.host == "0.0.0.0" else args.host

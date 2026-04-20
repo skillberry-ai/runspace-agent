@@ -29,6 +29,7 @@ class SessionRecord:
         self.started_at: float | None = None  # time.monotonic() when run began
         self.duration_seconds: float | None = None
         self.total_tokens: int = 0
+        self.total_cost_usd: float | None = None
         self.duration_ms: int = 0
         self.error: str | None = None
         self.output_zip_path: Path | None = None
@@ -141,8 +142,18 @@ class SessionManager:
                         try:
                             import json
                             data = json.loads(conv.read_text(encoding="utf-8"))
-                            rec.duration_ms = data.get("duration_ms", 0)
-                            rec.total_tokens = data.get("total_tokens", 0)
+                            if isinstance(data, list):
+                                for msg in reversed(data):
+                                    if isinstance(msg, dict) and msg.get("type") == "result":
+                                        rec.duration_ms = msg.get("duration_ms", 0)
+                                        rec.total_cost_usd = msg.get("total_cost_usd")
+                                        usage = msg.get("usage")
+                                        if isinstance(usage, dict):
+                                            rec.total_tokens = usage.get("input_tokens", 0) + usage.get("output_tokens", 0)
+                                        break
+                            else:
+                                rec.duration_ms = data.get("duration_ms", 0)
+                                rec.total_tokens = data.get("total_tokens", 0)
                             if rec.duration_ms:
                                 rec.duration_seconds = round(rec.duration_ms / 1000, 2)
                         except Exception:

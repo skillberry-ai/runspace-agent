@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 from runspace_agent.agents.base import AgentResult, Workspace
 from runspace_agent.agents.claude_code.defaults import (
     DEFAULT_ALLOWED_TOOLS,
+    DEFAULT_DISALLOWED_TOOLS,
     DEFAULT_MAX_TURNS,
     DEFAULT_SYSTEM_PROMPT,
 )
@@ -36,6 +37,7 @@ class ClaudeCodeAgent:
     * ``permission_mode`` → ``"bypassPermissions"`` (headless container)
     * ``cwd`` → from the workspace (sandbox boundary)
     * ``system_prompt`` → headless system prompt (no interactive prompts)
+    * ``disallowed_tools`` → interactive/scheduling tools disabled for headless
     * ``hooks`` → from the workspace (sandbox enforcement)
 
     If the user does not set ``allowed_tools`` or ``max_turns``, sensible
@@ -90,6 +92,7 @@ class ClaudeCodeAgent:
         overrides["permission_mode"] = "bypassPermissions"
         overrides["cwd"] = str(workspace.cwd)
         overrides["system_prompt"] = DEFAULT_SYSTEM_PROMPT
+        overrides["disallowed_tools"] = list(DEFAULT_DISALLOWED_TOOLS)
 
         if workspace.hooks:
             overrides["hooks"] = self._build_sdk_hooks(workspace.hooks)
@@ -105,6 +108,7 @@ class ClaudeCodeAgent:
         """Iterate the agent loop with pre-built options."""
         messages: list[Any] = []
         total_tokens = 0
+        total_cost_usd: float | None = None
         start_ms = int(time.time() * 1000)
 
         async for message in query(
@@ -118,6 +122,9 @@ class ClaudeCodeAgent:
                 if isinstance(usage, dict):
                     total_tokens += usage.get("input_tokens", 0)
                     total_tokens += usage.get("output_tokens", 0)
+                cost = getattr(message, "total_cost_usd", None)
+                if cost is not None:
+                    total_cost_usd = cost
 
         from runspace_agent.agents.claude_code.serializer import serialize_messages
 
@@ -127,6 +134,7 @@ class ClaudeCodeAgent:
             messages=messages,
             conversation=serialize_messages(messages),
             total_tokens=total_tokens,
+            total_cost_usd=total_cost_usd,
             duration_ms=duration_ms,
         )
 

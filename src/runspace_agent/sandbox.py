@@ -10,8 +10,11 @@ all path operations.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
+
+_DOTDOT_RE = re.compile(r'(?:^|[/\\])\.\.(?:[/\\]|$)')
 
 
 def _resolve(p: str) -> Path:
@@ -90,7 +93,8 @@ def _check_bash_command(command: str, session: Path) -> str | None:
     """Best-effort check that a bash command doesn't escape the session."""
     for token in command.split():
         cleaned = token.strip("'\"")
-        # Check tokens that look like absolute paths
+        if _DOTDOT_RE.search(cleaned) or cleaned == "..":
+            return "Access denied: command contains path traversal (..)"
         if Path(cleaned).is_absolute() and not _is_inside(cleaned, session):
             return f"Access denied: command references path outside session: {cleaned}"
     return None

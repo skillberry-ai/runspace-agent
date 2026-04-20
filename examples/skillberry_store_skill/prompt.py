@@ -77,19 +77,45 @@ WHAT YOU CAN CHANGE:
 - Improve function docstrings to make tool descriptions clearer.
 - Fix function signatures (parameters, types) to prevent agent errors.
 - Add new .py files to scripts/ if a new tool would help.
+- Update the SKILL.md frontmatter `name` to reflect your changes (e.g.,
+  "primitive-skill-with-policy-guards"). The name must be kebab-case, max 64 chars.
 
-DO NOT TOUCH:
-- The API connection setup in make_api_call.py — the base_url, tools_url, and
-  _make_api_call() function are the runtime wiring to the tau2 environment.
-  Do NOT modify these. They are correct as-is:
-    base_url = "http://127.0.0.1:8004"
-    tools_url = f"{{base_url}}/{{env_id}}/tools"
+=== CRITICAL: DO NOT TOUCH make_api_call.py ===
+The file scripts/make_api_call.py is the runtime wiring to the tau2 environment.
+Do NOT modify, rename, move, or delete it. It is correct as-is.
+
+=== CRITICAL: PYTHON FILE FORMAT RULES ===
+The Skillberry Store executes each .py file as a SELF-CONTAINED flat script.
+There is NO Python module/package import system — no relative or cross-file imports work.
+
+FORBIDDEN — NEVER add any of these lines to any .py file:
+    from scripts.make_api_call import _make_api_call
+    from scripts.<anything> import <anything>
+    import scripts.<anything>
+These WILL cause "No module named 'scripts.make_api_call'" at runtime and break the skill!
+
+HOW IT WORKS:
+- The store concatenates the ENTIRE .py file content into a single execution script.
+- _make_api_call() is already available in the execution scope because the store
+  injects make_api_call.py content before your code. You do NOT need to import it.
+- Each .py file must be fully self-contained: only use stdlib imports and
+  _make_api_call() (which is globally available at runtime).
+- If you add a NEW .py file, every function in it that needs _make_api_call()
+  can just call it directly — it is injected by the runtime.
+
+OUTPUT FORMAT — PRESERVE THE INPUT STRUCTURE:
+- Your output skill directory MUST have the same structure as the input.
+- Every .py file that had functions calling _make_api_call() must STILL have
+  those functions calling _make_api_call() the same way (no import line needed).
+- Do NOT restructure or split files differently from the input unless you have
+  a clear reason, and even then preserve the _make_api_call() calling convention.
 
 WHAT TO BE CAREFUL ABOUT:
 - Do NOT rename existing files unless you intentionally want to change tool/snippet
   identity — it breaks the round-trip mapping between import and export.
 - Do NOT leave temporary files in the directory — they will be imported.
 - Keep SKILL.md frontmatter valid at all times.
+- Do NOT add any cross-file imports between scripts/ files.
 
 BEFORE FINISHING:
 - Run: python context/validate_skill.py <path-to-editable-dir>

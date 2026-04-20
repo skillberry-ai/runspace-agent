@@ -51,6 +51,7 @@ class AgentResult:
     messages: list[Any] = field(default_factory=list)
     conversation: list[dict[str, Any]] = field(default_factory=list)
     total_tokens: int = 0
+    total_cost_usd: float | None = None
     duration_ms: int = 0
     error: str | None = None
 

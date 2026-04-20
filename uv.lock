@@ -937,6 +937,7 @@ all = [
     { name = "claude-code-sdk" },
     { name = "docker" },
     { name = "fastapi" },
+    { name = "mcp" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 claude = [
@@ -949,6 +950,9 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
 ]
+examples = [
+    { name = "mcp" },
+]
 server = [
     { name = "fastapi" },
     { name = "uvicorn", extra = ["standard"] },
@@ -959,13 +963,14 @@ requires-dist = [
     { name = "claude-code-sdk", marker = "extra == 'claude'", specifier = ">=0.0.25" },
     { name = "docker", marker = "extra == 'container'", specifier = ">=7.0.0" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.104.0" },
+    { name = "mcp", marker = "extra == 'examples'", specifier = ">=1.0" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
-    { name = "runspace-agent", extras = ["claude", "container", "server"], marker = "extra == 'all'" },
+    { name = "runspace-agent", extras = ["claude", "container", "server", "examples"], marker = "extra == 'all'" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'server'", specifier = ">=0.24.0" },
 ]
-provides-extras = ["claude", "container", "server", "all", "dev"]
+provides-extras = ["claude", "container", "server", "examples", "all", "dev"]
 
 [[package]]
 name = "sse-starlette"

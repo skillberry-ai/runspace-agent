@@ -8,7 +8,7 @@ Three modes are available (ordered by recommendation):
      Sends a request to the runspace_agent HTTP server, which runs the agent
      inside a Docker container. The most production-like and secure option.
      Prerequisites:
-         uv pip install -e ".[all]"
+         uv pip install -e ".[all]"  (includes examples extra for MCP server)
          Docker running + runspace-agent:latest image built
          Start the server FIRST in a separate terminal:
              runspace-srv
@@ -19,7 +19,7 @@ Three modes are available (ordered by recommendation):
      Calls the Python library directly (no server), but still runs the agent
      inside a Docker container. The original editable/ directory is never modified.
      Prerequisites:
-         uv pip install -e ".[claude,container]"
+         uv pip install -e ".[claude,container,examples]"
          Docker running + runspace-agent:latest image built
      Run:
          uv run python examples/skill_improvement/run.py library-container
@@ -28,7 +28,7 @@ Three modes are available (ordered by recommendation):
      Calls the Python library directly, runs on your machine with no Docker.
      Fastest for development but least isolated — the agent modifies editable/.
      Prerequisites:
-         uv pip install -e ".[claude]"
+         uv pip install -e ".[claude,examples]"
      Run:
          uv run python examples/skill_improvement/run.py library-local
 """
@@ -52,9 +52,26 @@ EXAMPLE_DIR = Path(__file__).parent
 
 EDITABLE_DIR = EXAMPLE_DIR / "editable"
 CONTEXT_DIR = EXAMPLE_DIR / "context"
+MCP_SERVER_SCRIPT = "mcp_server.py"
 EDITABLE_DESCRIPTION = "Anthropic skill with CSV analyzer (has bugs to fix)"
 CONTEXT_DESCRIPTION = "Traces showing failures + domain policy requirements"
 PREINSTALLED_SKILLS = ["skill-creator"]
+
+
+def _mcp_servers(mode: str) -> dict:
+    """Build MCP server config with paths appropriate for the execution mode."""
+    if mode == "local":
+        command = sys.executable
+        script = str(CONTEXT_DIR / MCP_SERVER_SCRIPT)
+    else:
+        command = "python3"
+        script = "/workspace/agent_workspace/context/" + MCP_SERVER_SCRIPT
+    return {
+        "csv-validator": {
+            "command": command,
+            "args": [script],
+        }
+    }
 
 PROMPT = """\
 You are a skill improvement specialist. Analyze the execution traces and fix the skill.
@@ -67,6 +84,9 @@ You are a skill improvement specialist. Analyze the execution traces and fix the
    - Add median calculation
    - Add string column stats (unique count, most frequent value)
 4. Fix editable/SKILL.md to match the corrected behavior.
+5. IMPORTANT: Use the `validate_csv_analyzer` MCP tool to verify your fixes!
+   Pass the absolute path to editable/scripts/analyze.py as the script_path argument.
+   Keep fixing until all 4 tests pass.
 """
 
 
@@ -102,6 +122,7 @@ def run_server() -> None:
             "env": {k: v for k, v in build_env(claude_model).items() if v}
         },
         "agent_max_turns": 50,
+        "mcp_servers": _mcp_servers("container"),
     }
 
     print(f"Sending request to {server_url}/run ...")
@@ -155,7 +176,9 @@ async def run_library_container() -> None:
     from runspace_agent import RunspaceSession, run_agent
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
-    options = ClaudeCodeOptions(env=build_env(claude_model), max_turns=50)
+    options = ClaudeCodeOptions(
+        env=build_env(claude_model), max_turns=50, mcp_servers=_mcp_servers("container"),
+    )
     agent = ClaudeCodeAgent(options=options)
 
     session = RunspaceSession(
@@ -193,7 +216,9 @@ async def run_library_local() -> None:
     from runspace_agent import RunspaceSession, run_agent
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
-    options = ClaudeCodeOptions(env=build_env(claude_model), max_turns=50)
+    options = ClaudeCodeOptions(
+        env=build_env(claude_model), max_turns=50, mcp_servers=_mcp_servers("local"),
+    )
     agent = ClaudeCodeAgent(options=options)
 
     session = RunspaceSession(

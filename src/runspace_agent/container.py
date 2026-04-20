@@ -56,6 +56,10 @@ def _serialize_agent_options(agent_options: Any) -> dict[str, Any]:
     if allowed_tools:
         settings.setdefault("permissions", {})["allow"] = list(allowed_tools)
 
+    disallowed_tools = getattr(agent_options, "disallowed_tools", None)
+    if disallowed_tools:
+        settings.setdefault("permissions", {})["disallow"] = list(disallowed_tools)
+
     if settings:
         result["settings"] = settings
 

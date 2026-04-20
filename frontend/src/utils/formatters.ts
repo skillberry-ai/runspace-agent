@@ -35,3 +35,9 @@ export function formatTokens(n: number): string {
   if (n < 1000) return String(n);
   return `${(n / 1000).toFixed(1)}k`;
 }
+
+export function formatCost(usd: number | null | undefined): string {
+  if (usd == null) return '-';
+  if (usd < 0.01) return `$${usd.toFixed(4)}`;
+  return `$${usd.toFixed(2)}`;
+}

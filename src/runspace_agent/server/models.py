@@ -62,6 +62,7 @@ class SessionDetail(SessionInfo):
     """Full session details including agent result."""
 
     total_tokens: int = 0
+    total_cost_usd: float | None = None
     duration_ms: int = 0
     output_zip_path: str | None = None
     has_conversation: bool = False

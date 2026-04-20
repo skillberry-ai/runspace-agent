@@ -16,6 +16,19 @@ DEFAULT_ALLOWED_TOOLS: list[str] = [
     "LSP",
 ]
 
+DEFAULT_DISALLOWED_TOOLS: list[str] = [
+    "AskUserQuestion",
+    "EnterPlanMode",
+    "ExitPlanMode",
+    "EnterWorktree",
+    "ExitWorktree",
+    "ScheduleWakeup",
+    "CronCreate",
+    "CronDelete",
+    "CronList",
+    "Monitor",
+]
+
 DEFAULT_SYSTEM_PROMPT: str = (
     "You are running headless in an automated pipeline. "
     "There is no human available to answer questions. "

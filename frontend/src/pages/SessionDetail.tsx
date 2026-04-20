@@ -8,7 +8,7 @@ import FileViewer from '../components/FileViewer';
 import DiffView from '../components/DiffView';
 import ConversationView from '../components/ConversationView';
 import MarkdownContent from '../components/MarkdownContent';
-import { formatDuration, formatTokens, formatDate } from '../utils/formatters';
+import { formatDuration, formatTokens, formatDate, formatCost } from '../utils/formatters';
 
 const TAB_LIST = ['Files', 'Diff', 'Summary', 'Conversation'];
 
@@ -120,12 +120,13 @@ export default function SessionDetail() {
       )}
 
       {/* Metadata grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-3">
         <MetaCard label="Status">
           <StatusBadge status={session.status} />
         </MetaCard>
         <MetaCard label="Duration" value={formatDuration(session.duration_seconds ?? (session.duration_ms / 1000))} />
         <MetaCard label="Tokens" value={formatTokens(session.total_tokens)} />
+        <MetaCard label="Cost" value={formatCost(session.total_cost_usd)} />
         <MetaCard label="Created" value={formatDate(session.created_at)} />
       </div>
       <div className="mb-6">

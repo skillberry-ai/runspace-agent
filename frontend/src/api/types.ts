@@ -13,6 +13,7 @@ export interface SessionInfo {
 
 export interface SessionDetail extends SessionInfo {
   total_tokens: number;
+  total_cost_usd?: number | null;
   duration_ms: number;
   output_zip_path?: string | null;
   has_conversation: boolean;

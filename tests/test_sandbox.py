@@ -82,3 +82,59 @@ async def test_sandbox_hook_blocks_glob_outside(tmp_path: Path) -> None:
         None,
     )
     assert result.get("decision") == "block"
+
+
+@pytest.mark.asyncio
+async def test_sandbox_hook_blocks_relative_traversal(tmp_path: Path) -> None:
+    hook = make_sandbox_hook(tmp_path)
+    result = await hook(
+        {"command": "cat ../editable_original/secret.txt"},
+        "Bash",
+        None,
+    )
+    assert result.get("decision") == "block"
+    assert "path traversal" in result.get("systemMessage", "")
+
+
+@pytest.mark.asyncio
+async def test_sandbox_hook_blocks_cd_dotdot(tmp_path: Path) -> None:
+    hook = make_sandbox_hook(tmp_path)
+    result = await hook(
+        {"command": "cd .. && ls"},
+        "Bash",
+        None,
+    )
+    assert result.get("decision") == "block"
+
+
+@pytest.mark.asyncio
+async def test_sandbox_hook_blocks_dotdot_in_middle(tmp_path: Path) -> None:
+    hook = make_sandbox_hook(tmp_path)
+    result = await hook(
+        {"command": "cat editable/../../etc/passwd"},
+        "Bash",
+        None,
+    )
+    assert result.get("decision") == "block"
+
+
+@pytest.mark.asyncio
+async def test_sandbox_hook_allows_dots_in_filenames(tmp_path: Path) -> None:
+    hook = make_sandbox_hook(tmp_path)
+    result = await hook(
+        {"command": f"cat {tmp_path / 'file..name.txt'}"},
+        "Bash",
+        None,
+    )
+    assert result == {}
+
+
+@pytest.mark.asyncio
+async def test_sandbox_hook_blocks_quoted_dotdot(tmp_path: Path) -> None:
+    hook = make_sandbox_hook(tmp_path)
+    result = await hook(
+        {"command": 'cat "../secret.txt"'},
+        "Bash",
+        None,
+    )
+    assert result.get("decision") == "block"

@@ -113,6 +113,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
         )
         record.duration_seconds = result.duration_seconds
         record.total_tokens = result.agent_result.total_tokens
+        record.total_cost_usd = result.agent_result.total_cost_usd
         record.duration_ms = result.agent_result.duration_ms
         record.error = result.agent_result.error
         if result.output_zip_path:
@@ -189,6 +190,7 @@ async def get_session(session_id: str) -> SessionDetail:
             duration_seconds=_effective_duration(record),
             error=record.error,
             total_tokens=record.total_tokens,
+            total_cost_usd=record.total_cost_usd,
             duration_ms=record.duration_ms,
             output_zip_path=str(record.output_zip_path)
             if record.output_zip_path

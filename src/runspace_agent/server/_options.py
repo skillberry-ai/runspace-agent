@@ -28,6 +28,8 @@ def build_options_from_request(req: RunRequest) -> ClaudeCodeOptions:
         permissions = req.agent_settings.get("permissions", {})
         if permissions.get("allow"):
             kwargs["allowed_tools"] = list(permissions["allow"])
+        if permissions.get("disallow"):
+            kwargs["disallowed_tools"] = list(permissions["disallow"])
 
     kwargs["max_turns"] = req.agent_max_turns
 

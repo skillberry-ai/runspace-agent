@@ -41,6 +41,8 @@ def _build_options_from_config(config: dict[str, Any]) -> Any:
     permissions = settings.get("permissions", {})
     if permissions.get("allow"):
         kwargs["allowed_tools"] = list(permissions["allow"])
+    if permissions.get("disallow"):
+        kwargs["disallowed_tools"] = list(permissions["disallow"])
 
     max_turns = config.get("max_turns")
     if max_turns is not None:

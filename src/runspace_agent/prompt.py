@@ -51,6 +51,9 @@ You have access to two directories:
   No one is available to answer questions or provide clarification.
   When you encounter ambiguity, make a reasonable decision and move forward —
   asking a question will block this process indefinitely with no one to respond.
+- After making changes, you MUST verify they work as intended. Run the code,
+  execute tests, or otherwise validate that your modifications produce the
+  expected behavior. Do not assume correctness — confirm it.
 
 ## Your Task
 
@@ -69,8 +72,12 @@ Include:
 1. **Objective**: What you were asked to do (1-2 sentences).
 2. **Changes Made**: A bulleted list of every file you modified or created,
    with a brief description of each change.
-3. **Key Decisions**: Any non-obvious decisions or trade-offs you made and why.
-4. **Recurrent Issues Found**: Any repeatable problems, failure patterns, or limitations you observed that could reappear in future runs, including where they occur and how they were handled in this session.
+3. **Verification & Testing**: Describe how you verified that your changes work
+   correctly. Include: what tests or commands you ran, their output/results,
+   and whether all checks passed. If any test failed, explain what went wrong
+   and how you addressed it.
+4. **Key Decisions**: Any non-obvious decisions or trade-offs you made and why.
+5. **Recurrent Issues Found**: Any repeatable problems, failure patterns, or limitations you observed that could reappear in future runs, including where they occur and how they were handled in this session.
 
 Write in Markdown format. Be thorough but concise.
 """

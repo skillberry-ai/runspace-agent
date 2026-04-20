@@ -88,8 +88,18 @@ def validate_skill(skill_path: Path) -> tuple[bool, list[str]]:
                 errors.append(
                     f"FAIL: name '{name}' cannot start/end with hyphen or have consecutive hyphens"
                 )
+            if len(name) < 3:
+                errors.append(
+                    f"FAIL: name '{name}' is too short ({len(name)} chars, min 3)"
+                )
             if len(name) > 64:
                 errors.append(f"FAIL: name is {len(name)} chars (max 64)")
+            parts = name.split("-")
+            if all(len(p) <= 1 for p in parts if p):
+                errors.append(
+                    f"FAIL: name '{name}' is not descriptive enough — "
+                    f"use meaningful kebab-case words (e.g., 'primitive-skill-with-policy')"
+                )
 
         # description
         desc = frontmatter.get("description", "")
@@ -112,11 +122,40 @@ def validate_skill(skill_path: Path) -> tuple[bool, list[str]]:
     for py_file in py_files:
         try:
             source = py_file.read_text(encoding="utf-8")
-            ast.parse(source, filename=str(py_file))
+            tree = ast.parse(source, filename=str(py_file))
         except SyntaxError as e:
             errors.append(
                 f"FAIL: Syntax error in {py_file.relative_to(skill_path)}: {e}"
             )
+            continue
+
+        rel = py_file.relative_to(skill_path)
+
+        # Check for forbidden cross-file imports (scripts.* imports)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("scripts"):
+                errors.append(
+                    f"FAIL: Forbidden import in {rel} line {node.lineno}: "
+                    f"'from {node.module} import ...' — the Skillberry Store "
+                    f"does not support cross-file imports. _make_api_call() is "
+                    f"injected by the runtime and must NOT be imported."
+                )
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name.startswith("scripts"):
+                        errors.append(
+                            f"FAIL: Forbidden import in {rel} line {node.lineno}: "
+                            f"'import {alias.name}' — cross-file imports between "
+                            f"scripts/ files are not supported by the store."
+                        )
+
+    # Check that make_api_call.py was not modified or deleted
+    make_api_call = skill_path / "scripts" / "make_api_call.py"
+    if not make_api_call.exists():
+        errors.append(
+            "FAIL: scripts/make_api_call.py is missing — this file must not be "
+            "deleted or renamed. It provides the runtime API wiring."
+        )
 
     # Count tools (top-level functions)
     tool_count = 0

@@ -12,6 +12,7 @@ from runspace_agent.agents.base import FilesystemAgent, Workspace
 from runspace_agent.agents.claude_code.agent import ClaudeCodeAgent
 from runspace_agent.agents.claude_code.defaults import (
     DEFAULT_ALLOWED_TOOLS,
+    DEFAULT_DISALLOWED_TOOLS,
     DEFAULT_MAX_TURNS,
     DEFAULT_SYSTEM_PROMPT,
 )
@@ -180,3 +181,44 @@ def test_allowed_tools_are_comprehensive() -> None:
     expected = {"Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill",
                 "WebSearch", "WebFetch", "Agent", "LSP"}
     assert set(DEFAULT_ALLOWED_TOOLS) == expected
+
+
+def test_disallowed_tools_always_enforced(tmp_path) -> None:
+    """disallowed_tools is enforced even when user provides their own."""
+    opts = _FakeClaudeCodeOptions(disallowed_tools=["OnlyThis"])
+    agent = ClaudeCodeAgent(options=opts)
+    workspace = Workspace(
+        editable_dir=tmp_path / "editable",
+        context_dir=tmp_path / "context",
+        prompt="test",
+        skills_dir=None,
+        cwd=tmp_path,
+    )
+    effective = agent._build_effective_options(_FakeClaudeCodeOptions, workspace)
+    assert effective.disallowed_tools == list(DEFAULT_DISALLOWED_TOOLS)
+
+
+def test_disallowed_tools_applied_by_default(tmp_path) -> None:
+    """Bare options get the default disallowed_tools."""
+    agent = ClaudeCodeAgent()
+    workspace = Workspace(
+        editable_dir=tmp_path / "editable",
+        context_dir=tmp_path / "context",
+        prompt="test",
+        skills_dir=None,
+        cwd=tmp_path,
+    )
+    effective = agent._build_effective_options(_FakeClaudeCodeOptions, workspace)
+    assert "AskUserQuestion" in effective.disallowed_tools
+    assert "EnterPlanMode" in effective.disallowed_tools
+    assert "Monitor" in effective.disallowed_tools
+
+
+def test_disallowed_tools_list_is_complete() -> None:
+    """Verify the disallowed tools list contains all expected entries."""
+    expected = {
+        "AskUserQuestion", "EnterPlanMode", "ExitPlanMode",
+        "EnterWorktree", "ExitWorktree", "ScheduleWakeup",
+        "CronCreate", "CronDelete", "CronList", "Monitor",
+    }
+    assert set(DEFAULT_DISALLOWED_TOOLS) == expected
