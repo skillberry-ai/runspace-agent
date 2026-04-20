@@ -42,12 +42,18 @@ from runspace_agent.server.session_manager import SessionManager
 
 app = FastAPI(title="Runspace Agent", version="0.1.0")
 _ttl = int(os.environ.get("RUNSPACE_SESSION_TTL", "0")) or None
-manager = SessionManager(**({"session_ttl_seconds": _ttl, "cleanup_interval_seconds": _ttl} if _ttl else {}))
+manager = SessionManager(
+    **({"session_ttl_seconds": _ttl, "cleanup_interval_seconds": _ttl} if _ttl else {})
+)
 
 # Serve built React frontend
 _STATIC_DIR = Path(__file__).parent / "static"
 if (_STATIC_DIR / "assets").is_dir():
-    app.mount("/ui/assets", StaticFiles(directory=_STATIC_DIR / "assets"), name="frontend-assets")
+    app.mount(
+        "/ui/assets",
+        StaticFiles(directory=_STATIC_DIR / "assets"),
+        name="frontend-assets",
+    )
 
 
 @app.on_event("startup")
@@ -102,7 +108,9 @@ async def create_run(req: RunRequest) -> SessionInfo:
             record.duration_seconds = round(time.monotonic() - t0, 2)
             raise
 
-        record.status = SessionStatus.COMPLETED if result.success else SessionStatus.FAILED
+        record.status = (
+            SessionStatus.COMPLETED if result.success else SessionStatus.FAILED
+        )
         record.duration_seconds = result.duration_seconds
         record.total_tokens = result.agent_result.total_tokens
         record.duration_ms = result.agent_result.duration_ms
@@ -182,11 +190,14 @@ async def get_session(session_id: str) -> SessionDetail:
             error=record.error,
             total_tokens=record.total_tokens,
             duration_ms=record.duration_ms,
-            output_zip_path=str(record.output_zip_path) if record.output_zip_path else None,
+            output_zip_path=str(record.output_zip_path)
+            if record.output_zip_path
+            else None,
         )
     elif workspace:
         # Session not in manager but workspace exists on disk (e.g. after server restart)
         from datetime import datetime
+
         st = workspace.stat()
         elapsed = st.st_mtime - st.st_ctime
         detail = SessionDetail(
@@ -237,7 +248,9 @@ async def rename_session(session_id: str, req: RenameRequest) -> SessionInfo:
 # ---------- Skills ----------
 
 
-_BUNDLED_SKILLS_DIR = Path(__file__).resolve().parent.parent.parent.parent / ".claude" / "skills"
+_BUNDLED_SKILLS_DIR = (
+    Path(__file__).resolve().parent.parent.parent.parent / ".claude" / "skills"
+)
 
 
 @app.get("/skills", response_model=list[SkillInfo])
@@ -248,10 +261,7 @@ async def list_skills() -> list[SkillInfo]:
     if not _BUNDLED_SKILLS_DIR.is_dir():
         return []
     skills = get_default_skills(_BUNDLED_SKILLS_DIR)
-    return [
-        SkillInfo(**parse_skill_frontmatter(s.path))
-        for s in skills
-    ]
+    return [SkillInfo(**parse_skill_frontmatter(s.path)) for s in skills]
 
 
 # ---------- File browsing ----------
@@ -302,10 +312,21 @@ async def download_result(session_id: str) -> FileResponse:
     if not editable.is_dir():
         raise HTTPException(404, "No editable directory found in session workspace")
 
-    # Create zip
+    # Create zip — include session name in filename when available
+    record = manager.get(session_id)
+    if record and record.name:
+        safe_name = (
+            record.name.replace(" ", "_")
+            .replace("/", "_")
+            .replace("\\", "_")
+            .replace(":", "_")
+        )
+        filename = f"editable_{safe_name}_{session_id}.zip"
+    else:
+        filename = f"editable_{session_id}.zip"
     zip_base = Path(tempfile.gettempdir()) / f"runspace_editable_{session_id}"
     zip_path = shutil.make_archive(str(zip_base), "zip", str(editable))
-    return FileResponse(zip_path, filename=f"editable_{session_id}.zip")
+    return FileResponse(zip_path, filename=filename)
 
 
 # ---------- Diff ----------
@@ -322,7 +343,9 @@ async def get_session_diff(session_id: str) -> JSONResponse:
     modified = workspace / "agent_workspace" / "editable"
 
     if not original.is_dir():
-        raise HTTPException(404, "No original snapshot found (session may predate diff support)")
+        raise HTTPException(
+            404, "No original snapshot found (session may predate diff support)"
+        )
     if not modified.is_dir():
         raise HTTPException(404, "No editable directory found")
 
@@ -349,19 +372,25 @@ async def get_file_diff(session_id: str, path: str) -> JSONResponse:
     original_lines = _read_file_lines(original_file)
     modified_lines = _read_file_lines(modified_file)
 
-    diff_lines = list(difflib.unified_diff(
-        original_lines, modified_lines,
-        fromfile=f"a/{path}", tofile=f"b/{path}",
-        lineterm="",
-    ))
+    diff_lines = list(
+        difflib.unified_diff(
+            original_lines,
+            modified_lines,
+            fromfile=f"a/{path}",
+            tofile=f"b/{path}",
+            lineterm="",
+        )
+    )
 
-    return JSONResponse({
-        "path": path,
-        "diff": "\n".join(diff_lines),
-        "has_changes": len(diff_lines) > 0,
-        "original_exists": original_file.is_file(),
-        "modified_exists": modified_file.is_file(),
-    })
+    return JSONResponse(
+        {
+            "path": path,
+            "diff": "\n".join(diff_lines),
+            "has_changes": len(diff_lines) > 0,
+            "original_exists": original_file.is_file(),
+            "modified_exists": modified_file.is_file(),
+        }
+    )
 
 
 # ---------- Conversation & Summary ----------
@@ -395,9 +424,7 @@ async def get_summary(session_id: str) -> JSONResponse:
 
     summary_path = workspace / "agent_workspace" / "summary.md"
     if not summary_path.is_file():
-        raise HTTPException(
-            404, "Summary not found (agent may not have generated one)"
-        )
+        raise HTTPException(404, "Summary not found (agent may not have generated one)")
 
     content = summary_path.read_text(encoding="utf-8")
     return JSONResponse({"content": content})
@@ -476,9 +503,19 @@ def _read_file_lines(path: Path) -> list[str]:
 
 
 _DIFF_IGNORE_DIRS = {
-    "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache",
-    "node_modules", ".git", ".venv", "venv", ".tox", ".nox",
-    ".eggs", "*.egg-info", ".cache",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "node_modules",
+    ".git",
+    ".venv",
+    "venv",
+    ".tox",
+    ".nox",
+    ".eggs",
+    "*.egg-info",
+    ".cache",
 }
 
 
@@ -514,22 +551,36 @@ def _compute_diffs(original_dir: Path, modified_dir: Path) -> list[dict[str, Any
         orig_lines = _read_file_lines(original_dir / rel_path)
         mod_lines = _read_file_lines(modified_dir / rel_path)
 
-        diff_lines = list(difflib.unified_diff(
-            orig_lines, mod_lines,
-            fromfile=f"a/{rel_path}", tofile=f"b/{rel_path}",
-            lineterm="",
-        ))
+        diff_lines = list(
+            difflib.unified_diff(
+                orig_lines,
+                mod_lines,
+                fromfile=f"a/{rel_path}",
+                tofile=f"b/{rel_path}",
+                lineterm="",
+            )
+        )
 
         if diff_lines:
-            added = sum(1 for l in diff_lines if l.startswith("+") and not l.startswith("+++"))
-            removed = sum(1 for l in diff_lines if l.startswith("-") and not l.startswith("---"))
-            status = "added" if rel_path not in orig_files else ("deleted" if rel_path not in mod_files else "modified")
-            diffs.append({
-                "path": rel_path,
-                "status": status,
-                "diff": "\n".join(diff_lines),
-                "additions": added,
-                "deletions": removed,
-            })
+            added = sum(
+                1 for l in diff_lines if l.startswith("+") and not l.startswith("+++")
+            )
+            removed = sum(
+                1 for l in diff_lines if l.startswith("-") and not l.startswith("---")
+            )
+            status = (
+                "added"
+                if rel_path not in orig_files
+                else ("deleted" if rel_path not in mod_files else "modified")
+            )
+            diffs.append(
+                {
+                    "path": rel_path,
+                    "status": status,
+                    "diff": "\n".join(diff_lines),
+                    "additions": added,
+                    "deletions": removed,
+                }
+            )
 
     return diffs

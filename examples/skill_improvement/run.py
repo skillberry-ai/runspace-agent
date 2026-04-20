@@ -42,7 +42,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from common import build_env, print_result
+from common import ClaudeModel, build_env, print_result
 
 EXAMPLE_DIR = Path(__file__).parent
 
@@ -70,8 +70,6 @@ You are a skill improvement specialist. Analyze the execution traces and fix the
 """
 
 
-
-
 # ---------------------------------------------------------------------------
 # Option 1: server (HTTP API + Docker) — recommended
 #
@@ -80,6 +78,8 @@ You are a skill improvement specialist. Analyze the execution traces and fix the
 # Then run this script:
 #     uv run python examples/skill_improvement/run.py server
 # ---------------------------------------------------------------------------
+
+claude_model = ClaudeModel.HAIKU_4_5  # change this to test different models
 
 
 def run_server() -> None:
@@ -98,7 +98,9 @@ def run_server() -> None:
         "preinstalled_skills": PREINSTALLED_SKILLS,
         "mode": "container",
         "output_zip": False,
-        "agent_settings": {"env": {k: v for k, v in build_env().items() if v}},
+        "agent_settings": {
+            "env": {k: v for k, v in build_env(claude_model).items() if v}
+        },
         "agent_max_turns": 50,
     }
 
@@ -153,7 +155,7 @@ async def run_library_container() -> None:
     from runspace_agent import RunspaceSession, run_agent
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
-    options = ClaudeCodeOptions(env=build_env(), max_turns=50)
+    options = ClaudeCodeOptions(env=build_env(claude_model), max_turns=50)
     agent = ClaudeCodeAgent(options=options)
 
     session = RunspaceSession(
@@ -191,7 +193,7 @@ async def run_library_local() -> None:
     from runspace_agent import RunspaceSession, run_agent
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
-    options = ClaudeCodeOptions(env=build_env(), max_turns=50)
+    options = ClaudeCodeOptions(env=build_env(claude_model), max_turns=50)
     agent = ClaudeCodeAgent(options=options)
 
     session = RunspaceSession(
