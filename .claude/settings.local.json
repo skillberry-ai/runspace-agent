@@ -6,6 +6,6 @@
     ]
   },
   "additionalDirectories": [
-    "C:\\Users\\PrielHazan\\Downloads\\ConvoBoost\\skillberry-store\\skillberry-store_git"
+    "\\\\wsl$\\Ubuntu\\home\\priel\\projects\\ConvoBoost\\skillberry-store\\skillberry-store_git"
   ]
 }

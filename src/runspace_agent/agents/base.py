@@ -74,6 +74,49 @@ class FilesystemAgent(Protocol):
             agent's bundled/preinstalled skills on disk.  Each subdirectory
             is a separate skill.  ``None`` means the agent ships no default
             skills.
+
+    Adding a new agent type
+    -----------------------
+    1. Create ``agents/<name>/`` with three files:
+
+       ``agent.py`` — a class satisfying this Protocol::
+
+           class MyAgent:
+               skills_folder_name: str = ".<name>/skills"
+               default_skills_dir: Path | None = ...
+
+               def __init__(self, *, options: MyAgentOptions | None = None): ...
+               async def run(self, workspace: Workspace) -> AgentResult: ...
+
+       ``options.py`` — two module-level functions the registry calls::
+
+           def build_options(
+               agent_settings: dict | None = None,
+           ) -> MyAgentOptions:
+               '''Build agent-specific options from the settings dict.
+               Read only the keys your agent understands.'''
+               ...
+
+           def create(options: Any = None) -> MyAgent:
+               '''Instantiate the agent.'''
+               ...
+
+       ``__init__.py`` — re-export everything::
+
+           from agents.<name>.agent import MyAgent
+           from agents.<name>.options import build_options, create
+
+    2. Register the agent in ``agents/__init__.py``::
+
+           _AGENT_REGISTRY: dict[str, str] = {
+               "claude-code": "runspace_agent.agents.claude_code",
+               "<name>":      "runspace_agent.agents.<name>",      # add this
+           }
+
+    That's it. The server, container, and entrypoint all resolve the agent
+    through the registry, so no changes are needed outside ``agents/``.
+    Clients select the agent by passing ``"agent_type": "<name>"`` in the
+    ``POST /run`` request body (defaults to ``"claude-code"``).
     """
 
     skills_folder_name: str

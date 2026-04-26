@@ -81,6 +81,7 @@ async def run_local(
         user_prompt=session.prompt,
         editable_description=session.editable_description,
         context_description=session.context_description,
+        extra_summary_sections=session.extra_summary_sections,
     )
 
     # Create workspace and run agent

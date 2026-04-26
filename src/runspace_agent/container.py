@@ -159,12 +159,14 @@ def _run_ephemeral_blocking(
         user_prompt=session.prompt,
         editable_description=session.editable_description,
         context_description=session.context_description,
+        extra_summary_sections=session.extra_summary_sections,
     )
 
     # Write entrypoint config at workspace root (outside agent reach)
     config_data = {
         "prompt": prompt,
         "session_id": session_id,
+        "agent_type": session.agent_type,
         "cwd": "/workspace/agent_workspace",
         "editable_dir": "/workspace/agent_workspace/editable",
         "context_dir": "/workspace/agent_workspace/context",
@@ -269,12 +271,14 @@ async def _run_persistent(
         user_prompt=session.prompt,
         editable_description=session.editable_description,
         context_description=session.context_description,
+        extra_summary_sections=session.extra_summary_sections,
     )
 
     # Write config at session root (outside agent workspace)
     config_data = {
         "prompt": prompt,
         "session_id": session_id,
+        "agent_type": session.agent_type,
         "cwd": agent_path,
         "editable_dir": f"{agent_path}/editable",
         "context_dir": f"{agent_path}/context",

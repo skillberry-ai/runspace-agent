@@ -19,40 +19,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from runspace_agent.agents import Workspace, create_default_agent
+from runspace_agent.agents import Workspace, build_agent_options, create_agent
 from runspace_agent.sandbox import build_hooks_config
-
-
-def _build_options_from_config(config: dict[str, Any]) -> Any:
-    """Build a ClaudeCodeOptions from the JSON entrypoint config."""
-    from claude_code_sdk import ClaudeCodeOptions
-
-    kwargs: dict[str, Any] = {}
-
-    settings = config.get("settings") or {}
-    env_vars = {k: str(v) for k, v in settings.get("env", {}).items()}
-    if env_vars:
-        kwargs["env"] = env_vars
-
-    model = settings.get("model")
-    if model:
-        kwargs["model"] = model
-
-    permissions = settings.get("permissions", {})
-    if permissions.get("allow"):
-        kwargs["allowed_tools"] = list(permissions["allow"])
-    if permissions.get("disallow"):
-        kwargs["disallowed_tools"] = list(permissions["disallow"])
-
-    max_turns = config.get("max_turns")
-    if max_turns is not None:
-        kwargs["max_turns"] = max_turns
-
-    mcp_servers = config.get("mcp_servers")
-    if mcp_servers:
-        kwargs["mcp_servers"] = mcp_servers
-
-    return ClaudeCodeOptions(**kwargs)
 
 
 def main() -> None:
@@ -75,9 +43,16 @@ def main() -> None:
     # Build sandbox hooks for the container workspace
     hooks = build_hooks_config(cwd)
 
-    # Create the agent via the generic factory
-    options = _build_options_from_config(config)
-    agent = create_default_agent(options=options)
+    # Create the agent via the registry
+    agent_type = config.get("agent_type", "claude-code")
+    settings = dict(config.get("settings") or {})
+    if "max_turns" in config:
+        settings.setdefault("max_turns", config["max_turns"])
+    if config.get("mcp_servers"):
+        settings.setdefault("mcp_servers", config["mcp_servers"])
+
+    options = build_agent_options(agent_type=agent_type, agent_settings=settings)
+    agent = create_agent(agent_type=agent_type, options=options)
 
     workspace = Workspace(
         editable_dir=editable_dir,

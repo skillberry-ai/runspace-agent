@@ -67,9 +67,17 @@ async def startup() -> None:
 @app.post("/run", response_model=SessionInfo)
 async def create_run(req: RunRequest) -> SessionInfo:
     """Create a new session and start the agent in the background."""
-    from runspace_agent.server._options import build_options_from_request
+    from runspace_agent.agents import build_agent_options
 
-    agent_options = build_options_from_request(req)
+    settings = dict(req.agent_settings or {})
+    settings.setdefault("max_turns", req.agent_max_turns)
+    if req.mcp_servers:
+        settings.setdefault("mcp_servers", req.mcp_servers)
+
+    agent_options = build_agent_options(
+        agent_type=req.agent_type,
+        agent_settings=settings,
+    )
 
     session = RunspaceSession(
         editable_dir=Path(req.editable_dir),
@@ -77,6 +85,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
         prompt=req.prompt,
         editable_description=req.editable_description,
         context_description=req.context_description,
+        agent_type=req.agent_type,
         agent_options=agent_options,
         skills_dir=Path(req.skills_dir) if req.skills_dir else None,
         preinstalled_skills=req.preinstalled_skills,
@@ -86,6 +95,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
         container_memory=req.container_memory,
         container_cpus=req.container_cpus,
         container_mode=req.container_mode,  # type: ignore[arg-type]
+        extra_summary_sections=req.extra_summary_sections,
     )
 
     # Generate a stable session ID upfront so the UI only ever sees one entry.

@@ -16,6 +16,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from runspace_agent.agents.base import AgentResult, FilesystemAgent
+from runspace_agent.prompt import SummarySection
 from runspace_agent.skills import Skill
 
 
@@ -56,7 +57,8 @@ class RunspaceSession(BaseModel):
     editable_description: str = ""
     context_description: str = ""
     agent: Any = None  # FilesystemAgent instance
-    agent_options: Any = None  # ClaudeCodeOptions instance
+    agent_type: str = "claude-code"
+    agent_options: Any = None  # Agent-specific options (e.g. ClaudeCodeOptions)
     skills_dir: Path | None = None
     preinstalled_skills: list[str] | None = None
     mode: Literal["local", "container"] = "local"
@@ -66,6 +68,7 @@ class RunspaceSession(BaseModel):
     container_memory: str = "4g"
     container_cpus: int = 2
     container_mode: Literal["ephemeral", "persistent"] = "ephemeral"
+    extra_summary_sections: list[SummarySection] | None = None
 
 
 @dataclass
@@ -90,12 +93,12 @@ class RunspaceResult:
 
 
 def _resolve_agent(session: RunspaceSession) -> FilesystemAgent:
-    """Return the session's agent, or create a default via the agent factory."""
+    """Return the session's agent, or create one via the agent registry."""
     if session.agent is not None:
         return session.agent  # type: ignore[return-value]
-    from runspace_agent.agents import create_default_agent
+    from runspace_agent.agents import create_agent
 
-    return create_default_agent(options=session.agent_options)
+    return create_agent(agent_type=session.agent_type, options=session.agent_options)
 
 
 async def run_agent(

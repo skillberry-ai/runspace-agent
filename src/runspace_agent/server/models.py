@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from runspace_agent.prompt import SummarySection
+
 
 class SessionStatus(str, Enum):
     PENDING = "pending"
@@ -29,7 +31,8 @@ class RunRequest(BaseModel):
     mode: str = "local"
     output_zip: bool = False
     mcp_servers: dict[str, Any] | None = None
-    # Agent settings (passed to the resolved FilesystemAgent)
+    # Agent selection and settings
+    agent_type: str = "claude-code"
     agent_settings: dict[str, Any] | None = None
     agent_max_turns: int = 300
     # Container settings
@@ -37,6 +40,7 @@ class RunRequest(BaseModel):
     container_memory: str = "4g"
     container_cpus: int = 2
     container_mode: str = "ephemeral"
+    extra_summary_sections: list[SummarySection] | None = None
 
 
 class RenameRequest(BaseModel):

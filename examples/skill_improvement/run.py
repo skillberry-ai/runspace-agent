@@ -44,6 +44,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from common import ClaudeModel, build_env, print_result
 
+from runspace_agent.prompt import SummarySection
+
 EXAMPLE_DIR = Path(__file__).parent
 
 # ---------------------------------------------------------------------------
@@ -54,7 +56,19 @@ EDITABLE_DIR = EXAMPLE_DIR / "editable"
 CONTEXT_DIR = EXAMPLE_DIR / "context"
 MCP_SERVER_SCRIPT = "mcp_server.py"
 EDITABLE_DESCRIPTION = "Anthropic skill with CSV analyzer (has bugs to fix)"
-CONTEXT_DESCRIPTION = "Traces showing failures + domain policy requirements"
+CONTEXT_DESCRIPTION = (
+    "Traces showing failures + domain policy requirements. "
+    "Common contents include: execution traces/trajectories, domain knowledge, "
+    "performance history, and reward signals."
+)
+EXTRA_SUMMARY_SECTIONS = [
+    SummarySection(
+        title="Recurrent Issues Found",
+        content="Any repeatable problems, failure patterns, or limitations you "
+        "observed that could reappear in future runs, including where they "
+        "occur and how they were handled in this session.",
+    ),
+]
 PREINSTALLED_SKILLS = ["skill-creator"]
 
 
@@ -115,7 +129,9 @@ def run_server() -> None:
         "prompt": PROMPT,
         "editable_description": EDITABLE_DESCRIPTION,
         "context_description": CONTEXT_DESCRIPTION,
+        "extra_summary_sections": EXTRA_SUMMARY_SECTIONS,
         "preinstalled_skills": PREINSTALLED_SKILLS,
+        "agent_type": "claude-code",
         "mode": "container",
         "output_zip": False,
         "agent_settings": {
@@ -187,6 +203,7 @@ async def run_library_container() -> None:
         prompt=PROMPT,
         editable_description=EDITABLE_DESCRIPTION,
         context_description=CONTEXT_DESCRIPTION,
+        extra_summary_sections=EXTRA_SUMMARY_SECTIONS,
         agent=agent,
         preinstalled_skills=PREINSTALLED_SKILLS,
         mode="container",
@@ -227,6 +244,7 @@ async def run_library_local() -> None:
         prompt=PROMPT,
         editable_description=EDITABLE_DESCRIPTION,
         context_description=CONTEXT_DESCRIPTION,
+        extra_summary_sections=EXTRA_SUMMARY_SECTIONS,
         agent=agent,
         preinstalled_skills=PREINSTALLED_SKILLS,
         mode="local",

@@ -50,6 +50,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from common import build_env, print_result
 from prompt import build_prompt
 
+from runspace_agent.prompt import SummarySection
+
 EXAMPLE_DIR = Path(__file__).parent
 
 # ---------------------------------------------------------------------------
@@ -59,7 +61,25 @@ EXAMPLE_DIR = Path(__file__).parent
 EDITABLE_DIR = EXAMPLE_DIR / "editable" / "primitive-skill"
 CONTEXT_DIR = EXAMPLE_DIR / "context"
 EDITABLE_DESCRIPTION = "Anthropic skill for airline customer service (tau-bench)"
-CONTEXT_DESCRIPTION = "Tau-bench traces, evaluation criteria, and task definitions"
+CONTEXT_DESCRIPTION = (
+    "Tau-bench traces, evaluation criteria, and task definitions. "
+    "Common contents include: execution traces/trajectories, domain knowledge, "
+    "performance history, and reward signals."
+)
+EXTRA_SUMMARY_SECTIONS = [
+    SummarySection(
+        title="Recurrent Issues Found",
+        content="Any repeatable problems, failure patterns, or limitations you "
+        "observed that could reappear in future runs, including where they "
+        "occur and how they were handled in this session.",
+    ),
+    SummarySection(
+        title="Expected Production Behavior",
+        content="Describe how the agent is expected to behave now in production as "
+        "a result of your changes — specifically how it will avoid the "
+        "issues identified in the traces.",
+    ),
+]
 PREINSTALLED_SKILLS = ["skill-creator"]
 
 # Load tasks and build prompt — pass the task IDs you want to optimize for
@@ -93,7 +113,9 @@ def run_server() -> None:
         "prompt": PROMPT,
         "editable_description": EDITABLE_DESCRIPTION,
         "context_description": CONTEXT_DESCRIPTION,
+        "extra_summary_sections": EXTRA_SUMMARY_SECTIONS,
         "preinstalled_skills": PREINSTALLED_SKILLS,
+        "agent_type": "claude-code",
         "mode": "container",
         "output_zip": False,
         "agent_settings": {"env": {k: v for k, v in build_env().items() if v}},
@@ -160,6 +182,7 @@ async def run_library_container() -> None:
         prompt=PROMPT,
         editable_description=EDITABLE_DESCRIPTION,
         context_description=CONTEXT_DESCRIPTION,
+        extra_summary_sections=EXTRA_SUMMARY_SECTIONS,
         agent=agent,
         preinstalled_skills=PREINSTALLED_SKILLS,
         mode="container",
@@ -198,6 +221,7 @@ async def run_library_local() -> None:
         prompt=PROMPT,
         editable_description=EDITABLE_DESCRIPTION,
         context_description=CONTEXT_DESCRIPTION,
+        extra_summary_sections=EXTRA_SUMMARY_SECTIONS,
         agent=agent,
         preinstalled_skills=PREINSTALLED_SKILLS,
         mode="local",

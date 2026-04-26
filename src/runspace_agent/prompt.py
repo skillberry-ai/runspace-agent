@@ -4,6 +4,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import BaseModel
+
+
+class SummarySection(BaseModel):
+    """A single section in the agent's session summary."""
+
+    title: str
+    content: str
+
+    def to_markdown(self, index: int) -> str:
+        return f"{index}. **{self.title}**: {self.content}"
+
 
 def build_prompt(
     editable_dir: Path,
@@ -11,6 +23,7 @@ def build_prompt(
     user_prompt: str,
     editable_description: str = "",
     context_description: str = "",
+    extra_summary_sections: list[SummarySection] | None = None,
 ) -> str:
     """Assemble the full agent prompt from components.
 
@@ -23,12 +36,51 @@ def build_prompt(
         user_prompt: The user's task-specific instructions.
         editable_description: Optional description of editable dir contents.
         context_description: Optional description of context dir contents.
+        extra_summary_sections: Optional additional :class:`SummarySection`
+            entries appended to the session summary.
     """
     editable_desc = editable_description or (
         "This directory contains files you should read and modify."
     )
     context_desc = context_description or (
         "This directory contains read-only reference material."
+    )
+
+    summary_sections: list[SummarySection] = [
+        SummarySection(
+            title="Objective",
+            content="What you were asked to do (1-2 sentences).",
+        ),
+        SummarySection(
+            title="Changes Made",
+            content="A bulleted list of every file you modified or created, "
+            "with a brief description of each change.",
+        ),
+        SummarySection(
+            title="Verification & Testing",
+            content="Describe how you verified that your changes work correctly. "
+            "Include: what tests or commands you ran, their output/results, "
+            "and whether all checks passed. If any test failed, explain what "
+            "went wrong and how you addressed it.",
+        ),
+        SummarySection(
+            title="Key Decisions",
+            content="Any non-obvious decisions or trade-offs you made and why.",
+        ),
+        SummarySection(
+            title="Issues Found",
+            content="If you encountered any repeatable problems, failure patterns, "
+            "or limitations that could reappear in future runs, describe "
+            "where they occur and how they were handled in this session. "
+            "If none were found, you may omit this section.",
+        ),
+    ]
+
+    if extra_summary_sections:
+        summary_sections.extend(extra_summary_sections)
+
+    numbered_sections = "\n".join(
+        s.to_markdown(i) for i, s in enumerate(summary_sections, 1)
     )
 
     return f"""\
@@ -39,8 +91,6 @@ You have access to two directories:
 
 2. **CONTEXT DIRECTORY**: `{context_dir}`
    {context_desc}
-   Common contents include: execution traces/trajectories, domain knowledge,
-   performance history, and reward signals.
 
 ## Rules
 
@@ -69,15 +119,7 @@ it for a human audience — clear, concise, and well-structured.
 
 Include:
 
-1. **Objective**: What you were asked to do (1-2 sentences).
-2. **Changes Made**: A bulleted list of every file you modified or created,
-   with a brief description of each change.
-3. **Verification & Testing**: Describe how you verified that your changes work
-   correctly. Include: what tests or commands you ran, their output/results,
-   and whether all checks passed. If any test failed, explain what went wrong
-   and how you addressed it.
-4. **Key Decisions**: Any non-obvious decisions or trade-offs you made and why.
-5. **Recurrent Issues Found**: Any repeatable problems, failure patterns, or limitations you observed that could reappear in future runs, including where they occur and how they were handled in this session.
+{numbered_sections}
 
 Write in Markdown format. Be thorough but concise.
 """
