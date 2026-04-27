@@ -120,10 +120,11 @@ export default function SessionDetail() {
       )}
 
       {/* Metadata grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
         <MetaCard label="Status">
           <StatusBadge status={session.status} />
         </MetaCard>
+        <MetaCard label="Agent" value={session.agent_type || '-'} />
         <MetaCard label="Duration" value={formatDuration(session.duration_seconds ?? (session.duration_ms / 1000))} />
         <MetaCard label="Tokens" value={formatTokens(session.total_tokens)} />
         <MetaCard label="Cost" value={formatCost(session.total_cost_usd)} />

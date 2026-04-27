@@ -86,7 +86,7 @@ agent = ClaudeCodeAgent(
         "env": {
             "ANTHROPIC_BASE_URL": "https://your-proxy.example.com",
             "ANTHROPIC_AUTH_TOKEN": "sk-...",
-            "ANTHROPIC_MODEL": "claude-opus-4-6",
+            "ANTHROPIC_MODEL": "claude-opus-4-7",
         },
         "model": "opus[1m]",
     },
@@ -165,7 +165,7 @@ agent = ClaudeCodeAgent(
         "env": {
             "ANTHROPIC_BASE_URL": "https://your-proxy.example.com",
             "ANTHROPIC_AUTH_TOKEN": "sk-...",
-            "ANTHROPIC_MODEL": "claude-opus-4-6",
+            "ANTHROPIC_MODEL": "claude-opus-4-7",
         },
         "model": "opus[1m]",
     },

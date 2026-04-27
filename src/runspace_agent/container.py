@@ -162,6 +162,9 @@ def _run_ephemeral_blocking(
         extra_summary_sections=session.extra_summary_sections,
     )
 
+    prompt_path = workspace_root / "prompt.txt"
+    prompt_path.write_text(prompt, encoding="utf-8")
+
     # Write entrypoint config at workspace root (outside agent reach)
     config_data = {
         "prompt": prompt,

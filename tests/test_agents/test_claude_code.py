@@ -56,10 +56,10 @@ def test_default_options() -> None:
 
 
 def test_custom_options() -> None:
-    opts = _FakeClaudeCodeOptions(model="claude-opus-4-6", max_turns=50)
+    opts = _FakeClaudeCodeOptions(model="claude-opus-4-7", max_turns=50)
     agent = ClaudeCodeAgent(options=opts)
     assert agent._user_options is opts
-    assert agent._user_options.model == "claude-opus-4-6"
+    assert agent._user_options.model == "claude-opus-4-7"
     assert agent._user_options.max_turns == 50
 
 
@@ -178,8 +178,19 @@ async def test_run_raises_without_sdk(tmp_path) -> None:
 
 
 def test_allowed_tools_are_comprehensive() -> None:
-    expected = {"Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill",
-                "WebSearch", "WebFetch", "Agent", "LSP"}
+    expected = {
+        "Read",
+        "Write",
+        "Edit",
+        "Bash",
+        "Glob",
+        "Grep",
+        "Skill",
+        "WebSearch",
+        "WebFetch",
+        "Agent",
+        "LSP",
+    }
     assert set(DEFAULT_ALLOWED_TOOLS) == expected
 
 
@@ -217,8 +228,15 @@ def test_disallowed_tools_applied_by_default(tmp_path) -> None:
 def test_disallowed_tools_list_is_complete() -> None:
     """Verify the disallowed tools list contains all expected entries."""
     expected = {
-        "AskUserQuestion", "EnterPlanMode", "ExitPlanMode",
-        "EnterWorktree", "ExitWorktree", "ScheduleWakeup",
-        "CronCreate", "CronDelete", "CronList", "Monitor",
+        "AskUserQuestion",
+        "EnterPlanMode",
+        "ExitPlanMode",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ScheduleWakeup",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "Monitor",
     }
     assert set(DEFAULT_DISALLOWED_TOOLS) == expected

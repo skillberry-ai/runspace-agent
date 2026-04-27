@@ -37,7 +37,7 @@ class ThinkingBlock:
 @dataclass
 class AssistantMessage:
     content: list[Any]
-    model: str = "claude-opus-4-6"
+    model: str = "claude-opus-4-7"
     parent_tool_use_id: str | None = None
 
 
@@ -71,15 +71,19 @@ def test_serialize_assistant_with_text() -> None:
     result = serialize_messages(msgs)
     assert len(result) == 1
     assert result[0]["type"] == "assistant"
-    assert result[0]["model"] == "claude-opus-4-6"
+    assert result[0]["model"] == "claude-opus-4-7"
     assert result[0]["content"] == [{"type": "text", "text": "Hello world"}]
 
 
 def test_serialize_assistant_with_tool_use() -> None:
     msgs = [
-        AssistantMessage(content=[
-            ToolUseBlock(id="tu_1", name="Read", input={"file_path": "/tmp/test.py"}),
-        ])
+        AssistantMessage(
+            content=[
+                ToolUseBlock(
+                    id="tu_1", name="Read", input={"file_path": "/tmp/test.py"}
+                ),
+            ]
+        )
     ]
     result = serialize_messages(msgs)
     block = result[0]["content"][0]
@@ -90,9 +94,13 @@ def test_serialize_assistant_with_tool_use() -> None:
 
 def test_serialize_user_with_tool_result() -> None:
     msgs = [
-        UserMessage(content=[
-            ToolResultBlock(tool_use_id="tu_1", content="file contents here", is_error=False),
-        ])
+        UserMessage(
+            content=[
+                ToolResultBlock(
+                    tool_use_id="tu_1", content="file contents here", is_error=False
+                ),
+            ]
+        )
     ]
     result = serialize_messages(msgs)
     assert result[0]["type"] == "user"
@@ -144,9 +152,11 @@ def test_serialize_result_message() -> None:
 
 def test_serialize_thinking_block() -> None:
     msgs = [
-        AssistantMessage(content=[
-            ThinkingBlock(thinking="Let me analyze this...", signature="sig123"),
-        ])
+        AssistantMessage(
+            content=[
+                ThinkingBlock(thinking="Let me analyze this...", signature="sig123"),
+            ]
+        )
     ]
     result = serialize_messages(msgs)
     block = result[0]["content"][0]
@@ -160,22 +170,38 @@ def test_serialize_full_conversation() -> None:
     """Test a realistic multi-turn conversation."""
     msgs = [
         SystemMessage(subtype="init", data={"version": "1.0"}),
-        AssistantMessage(content=[
-            TextBlock(text="I'll read the file first."),
-            ToolUseBlock(id="tu_1", name="Read", input={"file_path": "test.py"}),
-        ]),
-        UserMessage(content=[
-            ToolResultBlock(tool_use_id="tu_1", content="print('hello')"),
-        ]),
-        AssistantMessage(content=[TextBlock(text="The file contains a print statement.")]),
+        AssistantMessage(
+            content=[
+                TextBlock(text="I'll read the file first."),
+                ToolUseBlock(id="tu_1", name="Read", input={"file_path": "test.py"}),
+            ]
+        ),
+        UserMessage(
+            content=[
+                ToolResultBlock(tool_use_id="tu_1", content="print('hello')"),
+            ]
+        ),
+        AssistantMessage(
+            content=[TextBlock(text="The file contains a print statement.")]
+        ),
         ResultMessage(
-            subtype="success", duration_ms=3000, duration_api_ms=2800,
-            is_error=False, num_turns=2, session_id="s123",
+            subtype="success",
+            duration_ms=3000,
+            duration_api_ms=2800,
+            is_error=False,
+            num_turns=2,
+            session_id="s123",
         ),
     ]
     result = serialize_messages(msgs)
     assert len(result) == 5
-    assert [m["type"] for m in result] == ["system", "assistant", "user", "assistant", "result"]
+    assert [m["type"] for m in result] == [
+        "system",
+        "assistant",
+        "user",
+        "assistant",
+        "result",
+    ]
 
 
 def test_serialize_empty_list() -> None:

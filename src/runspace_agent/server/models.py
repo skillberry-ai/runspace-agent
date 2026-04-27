@@ -54,6 +54,7 @@ class SessionInfo(BaseModel):
 
     session_id: str
     name: str | None = None
+    agent_type: str = ""
     status: SessionStatus
     created_at: str
     last_accessed: str

@@ -84,6 +84,9 @@ async def run_local(
         extra_summary_sections=session.extra_summary_sections,
     )
 
+    prompt_path = workspace_root / "prompt.txt"
+    prompt_path.write_text(prompt, encoding="utf-8")
+
     # Create workspace and run agent
     workspace = Workspace(
         editable_dir=editable_workspace,

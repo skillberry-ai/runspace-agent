@@ -19,9 +19,10 @@ from runspace_agent.server.models import SessionStatus
 class SessionRecord:
     """In-memory record of a session."""
 
-    def __init__(self, session_id: str, workspace_dir: Path | None = None, name: str | None = None) -> None:
+    def __init__(self, session_id: str, workspace_dir: Path | None = None, name: str | None = None, agent_type: str = "") -> None:
         self.session_id = session_id
         self.name = name
+        self.agent_type = agent_type
         self.status = SessionStatus.PENDING
         self.created_at = datetime.now(timezone.utc)
         self.last_accessed = datetime.now(timezone.utc)
@@ -81,8 +82,8 @@ class SessionManager:
         for sid in stale_ids:
             self.remove_session(sid)
 
-    def register(self, session_id: str, workspace_dir: Path | None = None, name: str | None = None) -> SessionRecord:
-        record = SessionRecord(session_id, workspace_dir, name=name)
+    def register(self, session_id: str, workspace_dir: Path | None = None, name: str | None = None, agent_type: str = "") -> SessionRecord:
+        record = SessionRecord(session_id, workspace_dir, name=name, agent_type=agent_type)
         self._sessions[session_id] = record
         return record
 

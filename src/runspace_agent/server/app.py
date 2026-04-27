@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -41,6 +42,13 @@ from runspace_agent.server.models import (
 from runspace_agent.server.session_manager import SessionManager
 
 app = FastAPI(title="Runspace Agent", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 _ttl = int(os.environ.get("RUNSPACE_SESSION_TTL", "0")) or None
 manager = SessionManager(
     **({"session_ttl_seconds": _ttl, "cleanup_interval_seconds": _ttl} if _ttl else {})
@@ -100,7 +108,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
 
     # Generate a stable session ID upfront so the UI only ever sees one entry.
     preliminary_id = uuid.uuid4().hex[:12]
-    record = manager.register(preliminary_id, name=req.name)
+    record = manager.register(preliminary_id, name=req.name, agent_type=req.agent_type)
 
     # Set workspace_dir eagerly so the orphan scanner skips this directory
     # while the agent is still running.
@@ -136,6 +144,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
     return SessionInfo(
         session_id=record.session_id,
         name=record.name,
+        agent_type=record.agent_type,
         status=record.status,
         created_at=record.created_at.isoformat(),
         last_accessed=record.last_accessed.isoformat(),
@@ -165,6 +174,7 @@ async def list_sessions(status: SessionStatus | None = None) -> list[SessionInfo
         SessionInfo(
             session_id=r.session_id,
             name=getattr(r, "name", None),
+            agent_type=r.agent_type,
             status=r.status,
             created_at=r.created_at.isoformat(),
             last_accessed=r.last_accessed.isoformat(),
@@ -193,6 +203,7 @@ async def get_session(session_id: str) -> SessionDetail:
         detail = SessionDetail(
             session_id=record.session_id,
             name=record.name,
+            agent_type=record.agent_type,
             status=record.status,
             created_at=record.created_at.isoformat(),
             last_accessed=record.last_accessed.isoformat(),
@@ -248,6 +259,7 @@ async def rename_session(session_id: str, req: RenameRequest) -> SessionInfo:
     return SessionInfo(
         session_id=record.session_id,
         name=record.name,
+        agent_type=record.agent_type,
         status=record.status,
         created_at=record.created_at.isoformat(),
         last_accessed=record.last_accessed.isoformat(),

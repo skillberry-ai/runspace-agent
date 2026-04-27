@@ -113,7 +113,7 @@ def run_server() -> None:
         "prompt": PROMPT,
         "editable_description": EDITABLE_DESCRIPTION,
         "context_description": CONTEXT_DESCRIPTION,
-        "extra_summary_sections": EXTRA_SUMMARY_SECTIONS,
+        "extra_summary_sections": [s.model_dump() for s in EXTRA_SUMMARY_SECTIONS],
         "preinstalled_skills": PREINSTALLED_SKILLS,
         "agent_type": "claude-code",
         "mode": "container",

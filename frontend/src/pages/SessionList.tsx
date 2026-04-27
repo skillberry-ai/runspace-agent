@@ -147,6 +147,7 @@ export default function SessionList() {
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left px-4 py-3 text-text-muted font-medium">Session</th>
+                <th className="text-left px-4 py-3 text-text-muted font-medium">Agent</th>
                 <th className="text-left px-4 py-3 text-text-muted font-medium">Status</th>
                 <th className="text-left px-4 py-3 text-text-muted font-medium">Created</th>
                 <th className="text-left px-4 py-3 text-text-muted font-medium">Duration</th>
@@ -178,6 +179,15 @@ export default function SessionList() {
                       <div className="font-mono text-xs text-text-muted mt-0.5">
                         {session.session_id}
                       </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {session.agent_type ? (
+                      <span className="inline-block bg-surface-light text-text-muted text-xs font-mono px-2 py-0.5 rounded">
+                        {session.agent_type}
+                      </span>
+                    ) : (
+                      <span className="text-text-muted text-xs">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
