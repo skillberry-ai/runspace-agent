@@ -99,7 +99,7 @@ options = ClaudeCodeOptions(
     env={
         "ANTHROPIC_BASE_URL": "https://your-api-proxy.example.com",
         "ANTHROPIC_AUTH_TOKEN": "sk-...",
-        "ANTHROPIC_MODEL": "claude-opus-4-7",
+        "ANTHROPIC_MODEL": "claude-opus-4-8",
     },
     max_turns=50,
     # Any ClaudeCodeOptions field is supported — model, mcp_servers,

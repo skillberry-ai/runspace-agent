@@ -37,7 +37,7 @@ class ThinkingBlock:
 @dataclass
 class AssistantMessage:
     content: list[Any]
-    model: str = "claude-opus-4-7"
+    model: str = "claude-opus-4-8"
     parent_tool_use_id: str | None = None
 
 
@@ -71,7 +71,7 @@ def test_serialize_assistant_with_text() -> None:
     result = serialize_messages(msgs)
     assert len(result) == 1
     assert result[0]["type"] == "assistant"
-    assert result[0]["model"] == "claude-opus-4-7"
+    assert result[0]["model"] == "claude-opus-4-8"
     assert result[0]["content"] == [{"type": "text", "text": "Hello world"}]
 
 

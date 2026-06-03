@@ -56,10 +56,10 @@ def test_default_options() -> None:
 
 
 def test_custom_options() -> None:
-    opts = _FakeClaudeCodeOptions(model="claude-opus-4-7", max_turns=50)
+    opts = _FakeClaudeCodeOptions(model="claude-opus-4-8", max_turns=50)
     agent = ClaudeCodeAgent(options=opts)
     assert agent._user_options is opts
-    assert agent._user_options.model == "claude-opus-4-7"
+    assert agent._user_options.model == "claude-opus-4-8"
     assert agent._user_options.max_turns == 50
 
 
