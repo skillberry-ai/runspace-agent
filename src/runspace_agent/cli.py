@@ -1,7 +1,8 @@
 """CLI entry point for ``runspace-srv``.
 
-Checks Docker availability, builds the container image if missing,
-then starts the FastAPI server.
+Starts the FastAPI server. Sessions default to local (no-Docker) execution.
+Pass ``--docker`` to run the Docker pre-flight (daemon check + image build)
+for clients that request container-mode sessions.
 """
 
 from __future__ import annotations
@@ -115,7 +116,7 @@ def _find_dockerfile() -> Path | None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="runspace-srv",
-        description="Start the Runspace Agent server (checks Docker first).",
+        description="Start the Runspace Agent server (local execution by default; --docker for container mode).",
     )
     parser.add_argument(
         "--port",
@@ -140,19 +141,30 @@ def main() -> None:
         help=f"Session TTL in hours before cleanup (default: {DEFAULT_SESSION_TTL_HOURS})",
     )
     parser.add_argument(
+        "--docker",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Run the Docker pre-flight (daemon check + image build) before "
+            "starting. Needed only for container-mode sessions; off by default "
+            "since sessions run locally."
+        ),
+    )
+    parser.add_argument(
         "--rebuild",
         action="store_true",
-        help="Force rebuild of the Docker image before starting",
+        help="Force rebuild of the Docker image before starting (implies --docker)",
     )
     args = parser.parse_args()
 
     # Propagate session TTL (converted to seconds) to the server via environment variable
     os.environ["RUNSPACE_SESSION_TTL"] = str(args.session_ttl * SECONDS_IN_HOUR)
 
-    # Pre-flight checks
-    docker = _docker_bin()
-    _check_docker_running(docker)
-    _ensure_image(docker, force_rebuild=args.rebuild)
+    # Docker pre-flight (opt-in; --rebuild implies it)
+    if args.docker or args.rebuild:
+        docker = _docker_bin()
+        _check_docker_running(docker)
+        _ensure_image(docker, force_rebuild=args.rebuild)
 
     # Start the server
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
