@@ -50,4 +50,7 @@ skillberry-skill-maker-future-integration/
 # Frontend
 frontend/node_modules/
 frontend/dist/
-src/runspace_agent/server/static/
+# NOTE: src/runspace_agent/server/static/ (the built SPA) is intentionally
+# committed so `pip install git+ssh://.../runspace-agent.git` ships the UI
+# without requiring a Node toolchain. Rebuild with `cd frontend && npm run build`
+# and commit the result when the frontend changes.
