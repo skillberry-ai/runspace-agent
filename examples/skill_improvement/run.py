@@ -19,6 +19,8 @@ Four modes are available (ordered by recommendation):
      Sends a request to the runspace_agent HTTP server, which runs the agent
      directly on the server's host (no Docker). Good for local testing where
      Docker is unavailable; the agent modifies editable/ on the server host.
+     WARNING: edits editable/ in place. Reset afterwards with
+         git restore examples/skill_improvement/editable   (or git stash)
      Prerequisites:
          uv pip install -e ".[all]"  (includes examples extra for MCP server)
          Start the server FIRST in a separate terminal:
@@ -38,6 +40,8 @@ Four modes are available (ordered by recommendation):
   4. library-local
      Calls the Python library directly, runs on your machine with no Docker.
      Fastest for development but least isolated — the agent modifies editable/.
+     WARNING: edits editable/ in place. Reset afterwards with
+         git restore examples/skill_improvement/editable   (or git stash)
      Prerequisites:
          uv pip install -e ".[claude,examples]"
      Run:
@@ -196,6 +200,9 @@ def run_server(mode: str = "container") -> None:
     else:
         print(f"FAILED: {data.get('error', 'unknown error')}")
 
+    if mode == "local":
+        _warn_local_edits()
+
 
 # ---------------------------------------------------------------------------
 # Option 2: library-container (Python library + Docker, no server needed)
@@ -270,11 +277,22 @@ async def run_library_local() -> None:
     print("Running agent in local mode (via library)...")
     result = await run_agent(session)
     print_result(result)
+    _warn_local_edits()
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _warn_local_edits() -> None:
+    """Remind the user that local mode mutated the example in place."""
+    print()
+    print("WARNING: local mode edited the example in place:")
+    print(f"  {EDITABLE_DIR}")
+    print("Reset it before committing or re-running, e.g.:")
+    print(f"  git restore {EDITABLE_DIR}")
+    print("  # or stash everything:  git stash")
 
 
 # ---------------------------------------------------------------------------
