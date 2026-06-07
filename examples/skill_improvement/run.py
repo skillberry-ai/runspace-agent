@@ -2,20 +2,31 @@
 
 All modes require: ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN env vars.
 
-Three modes are available (ordered by recommendation):
+Four modes are available (ordered by recommendation):
 
-  1. server
+  1. server-container
      Sends a request to the runspace_agent HTTP server, which runs the agent
      inside a Docker container. The most production-like and secure option.
      Prerequisites:
          uv pip install -e ".[all]"  (includes examples extra for MCP server)
          Docker running + runspace-agent:latest image built
          Start the server FIRST in a separate terminal:
+             runspace-srv --docker
+     Run:
+         uv run python examples/skill_improvement/run.py server-container
+
+  2. server-local
+     Sends a request to the runspace_agent HTTP server, which runs the agent
+     directly on the server's host (no Docker). Good for local testing where
+     Docker is unavailable; the agent modifies editable/ on the server host.
+     Prerequisites:
+         uv pip install -e ".[all]"  (includes examples extra for MCP server)
+         Start the server FIRST in a separate terminal:
              runspace-srv
      Run:
-         uv run python examples/skill_improvement/run.py server
+         uv run python examples/skill_improvement/run.py server-local
 
-  2. library-container
+  3. library-container
      Calls the Python library directly (no server), but still runs the agent
      inside a Docker container. The original editable/ directory is never modified.
      Prerequisites:
@@ -24,7 +35,7 @@ Three modes are available (ordered by recommendation):
      Run:
          uv run python examples/skill_improvement/run.py library-container
 
-  3. library-local
+  4. library-local
      Calls the Python library directly, runs on your machine with no Docker.
      Fastest for development but least isolated — the agent modifies editable/.
      Prerequisites:
@@ -105,19 +116,25 @@ You are a skill improvement specialist. Analyze the execution traces and fix the
 
 
 # ---------------------------------------------------------------------------
-# Option 1: server (HTTP API + Docker) — recommended
+# Option 1 & 2: server (HTTP API) — recommended
 #
 # Start the server first in a separate terminal:
-#     runspace-srv
+#     runspace-srv            # server-local (no Docker)
+#     runspace-srv --docker   # server-container (agent runs in Docker)
 # Then run this script:
-#     uv run python examples/skill_improvement/run.py server
+#     uv run python examples/skill_improvement/run.py server-local
+#     uv run python examples/skill_improvement/run.py server-container
 # ---------------------------------------------------------------------------
 
 claude_model = ClaudeModel.HAIKU_4_5  # change this to test different models
 
 
-def run_server() -> None:
-    """Send a request to the runspace_agent HTTP server and poll for results."""
+def run_server(mode: str = "container") -> None:
+    """Send a request to the runspace_agent HTTP server and poll for results.
+
+    ``mode`` is either ``"container"`` (server runs the agent in Docker) or
+    ``"local"`` (server runs the agent directly on its host, no Docker).
+    """
     import httpx
 
     server_url = os.environ.get("RUNSPACE_SERVER_URL", "http://localhost:6767")
@@ -132,13 +149,13 @@ def run_server() -> None:
         "extra_summary_sections": [s.model_dump() for s in EXTRA_SUMMARY_SECTIONS],
         "preinstalled_skills": PREINSTALLED_SKILLS,
         "agent_type": "claude-code",
-        "mode": "container",
+        "mode": mode,
         "output_zip": False,
         "agent_settings": {
             "env": {k: v for k, v in build_env(claude_model).items() if v}
         },
         "agent_max_turns": 50,
-        "mcp_servers": _mcp_servers("container"),
+        "mcp_servers": _mcp_servers(mode),
     }
 
     print(f"Sending request to {server_url}/run ...")
@@ -265,7 +282,8 @@ async def run_library_local() -> None:
 # ---------------------------------------------------------------------------
 
 MODES = {
-    "server": run_server,
+    "server-container": lambda: run_server("container"),
+    "server-local": lambda: run_server("local"),
     "library-container": lambda: asyncio.run(run_library_container()),
     "library-local": lambda: asyncio.run(run_library_local()),
 }
@@ -277,7 +295,10 @@ def main() -> None:
         print()
         print("Modes:")
         print(
-            "  server             HTTP API + Docker (recommended, start server first)"
+            "  server-container   HTTP API, server runs agent in Docker (start server first)"
+        )
+        print(
+            "  server-local       HTTP API, server runs agent on its host, no Docker (start server first)"
         )
         print("  library-container  Python library + Docker (no server needed)")
         print(
