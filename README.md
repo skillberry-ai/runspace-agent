@@ -382,3 +382,17 @@ Replace `server` with `library-container` or `library-local` for alternative mod
 
 See [docs/skillberry_integration.md](docs/skillberry_integration.md) for how to
 use this library to replace stages 1-3 of the skillberry-skill-maker pipeline.
+
+## Architecture
+
+For a map of the modules and how a run flows through them, see
+[docs/architecture.md](docs/architecture.md).
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the local
+setup, how to run the linter and tests, and the conventions we follow.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE.txt).
