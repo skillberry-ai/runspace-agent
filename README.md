@@ -1,11 +1,19 @@
 # runspace_agent
 
-Sandboxed execution environment for AI agents operating on filesystem directories.
+Run AI agents fully autonomously on a filesystem directory — MCP servers and skills
+enabled, with zero human approvals or permission prompts — safely isolated in a
+hardened Docker container (or locally).
 
 Given an **editable directory** (the agent's workspace), a **read-only context directory**
 (traces, domain knowledge, etc.), and a **prompt**, `runspace_agent` runs an AI agent
-that modifies the editable directory — either locally or inside a Docker container for
-full isolation.
+that modifies the editable directory and then exits.
+
+Because each session runs inside a locked-down container by default, the agent
+operates **unattended**: it can use its full toolset — MCP servers, skills, shell,
+file edits, web access — without stopping to ask for permission, since the container
+boundary (not a human in the loop) is what keeps it safe. The same agent can also run
+**locally** with `--no-docker`, where filesystem hooks confine it to the session
+workspace.
 
 ## Requirements
 
