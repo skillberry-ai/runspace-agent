@@ -79,9 +79,7 @@ def test_serialize_assistant_with_tool_use() -> None:
     msgs = [
         AssistantMessage(
             content=[
-                ToolUseBlock(
-                    id="tu_1", name="Read", input={"file_path": "/tmp/test.py"}
-                ),
+                ToolUseBlock(id="tu_1", name="Read", input={"file_path": "/tmp/test.py"}),
             ]
         )
     ]
@@ -96,9 +94,7 @@ def test_serialize_user_with_tool_result() -> None:
     msgs = [
         UserMessage(
             content=[
-                ToolResultBlock(
-                    tool_use_id="tu_1", content="file contents here", is_error=False
-                ),
+                ToolResultBlock(tool_use_id="tu_1", content="file contents here", is_error=False),
             ]
         )
     ]
@@ -181,9 +177,7 @@ def test_serialize_full_conversation() -> None:
                 ToolResultBlock(tool_use_id="tu_1", content="print('hello')"),
             ]
         ),
-        AssistantMessage(
-            content=[TextBlock(text="The file contains a print statement.")]
-        ),
+        AssistantMessage(content=[TextBlock(text="The file contains a print statement.")]),
         ResultMessage(
             subtype="success",
             duration_ms=3000,

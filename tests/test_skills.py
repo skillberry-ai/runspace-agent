@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from runspace_agent.skills import Skill, prepare_skills
+from runspace_agent.skills import prepare_skills
 
 
 def test_prepare_skills_with_user_dir(tmp_path: Path) -> None:

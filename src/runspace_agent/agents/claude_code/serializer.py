@@ -24,6 +24,7 @@ def serialize_messages(messages: list[Any]) -> list[dict[str, Any]]:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _serialize_message(msg: Any) -> dict[str, Any]:
     name = type(msg).__name__
 

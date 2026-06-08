@@ -17,7 +17,6 @@ import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
 
 from runspace_agent.agents import Workspace, build_agent_options, create_agent
 from runspace_agent.sandbox import build_hooks_config
@@ -35,7 +34,6 @@ def main() -> None:
     with open(config_path, encoding="utf-8") as f:
         config = json.load(f)
 
-    session_id = config.get("session_id", "unknown")
     cwd = Path(config["cwd"])
     editable_dir = Path(config["editable_dir"])
     context_dir = Path(config["context_dir"])
@@ -58,7 +56,9 @@ def main() -> None:
         editable_dir=editable_dir,
         context_dir=context_dir,
         prompt=config["prompt"],
-        skills_dir=cwd / agent.skills_folder_name if (cwd / agent.skills_folder_name).is_dir() else None,
+        skills_dir=cwd / agent.skills_folder_name
+        if (cwd / agent.skills_folder_name).is_dir()
+        else None,
         cwd=cwd,
         hooks=hooks,
     )

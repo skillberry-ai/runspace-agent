@@ -25,9 +25,7 @@ def _get_agent_module(agent_type: str) -> Any:
     module_path = _AGENT_REGISTRY.get(agent_type)
     if module_path is None:
         available = ", ".join(sorted(_AGENT_REGISTRY))
-        raise ValueError(
-            f"Unknown agent_type: {agent_type!r}. Available: {available}"
-        )
+        raise ValueError(f"Unknown agent_type: {agent_type!r}. Available: {available}")
     return importlib.import_module(module_path)
 
 

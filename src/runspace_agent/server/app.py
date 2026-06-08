@@ -126,9 +126,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
             record.duration_seconds = round(time.monotonic() - t0, 2)
             raise
 
-        record.status = (
-            SessionStatus.COMPLETED if result.success else SessionStatus.FAILED
-        )
+        record.status = SessionStatus.COMPLETED if result.success else SessionStatus.FAILED
         record.duration_seconds = result.duration_seconds
         record.total_tokens = result.agent_result.total_tokens
         record.total_cost_usd = result.agent_result.total_cost_usd
@@ -213,9 +211,7 @@ async def get_session(session_id: str) -> SessionDetail:
             total_tokens=record.total_tokens,
             total_cost_usd=record.total_cost_usd,
             duration_ms=record.duration_ms,
-            output_zip_path=str(record.output_zip_path)
-            if record.output_zip_path
-            else None,
+            output_zip_path=str(record.output_zip_path) if record.output_zip_path else None,
         )
     elif workspace:
         # Session not in manager but workspace exists on disk (e.g. after server restart)
@@ -237,7 +233,9 @@ async def get_session(session_id: str) -> SessionDetail:
     # Populate availability flags for conversation and summary
     if workspace:
         detail.has_conversation = (workspace / "conversation.json").is_file()
-        detail.has_summary = (workspace / "agent_workspace" / "summary.md").is_file() or (workspace / "summary.md").is_file()
+        detail.has_summary = (workspace / "agent_workspace" / "summary.md").is_file() or (
+            workspace / "summary.md"
+        ).is_file()
     return detail
 
 
@@ -272,9 +270,7 @@ async def rename_session(session_id: str, req: RenameRequest) -> SessionInfo:
 # ---------- Skills ----------
 
 
-_BUNDLED_SKILLS_DIR = (
-    Path(__file__).resolve().parent.parent.parent.parent / ".claude" / "skills"
-)
+_BUNDLED_SKILLS_DIR = Path(__file__).resolve().parent.parent.parent.parent / ".claude" / "skills"
 
 
 @app.get("/skills", response_model=list[SkillInfo])
@@ -313,7 +309,7 @@ async def get_session_file(session_id: str, path: str) -> Any:
     try:
         target.relative_to(workspace.resolve())
     except ValueError:
-        raise HTTPException(403, "Access denied: path escapes session workspace")
+        raise HTTPException(403, "Access denied: path escapes session workspace") from None
 
     if not target.exists():
         raise HTTPException(404, f"Path not found: {path}")
@@ -340,10 +336,7 @@ async def download_result(session_id: str) -> FileResponse:
     record = manager.get(session_id)
     if record and record.name:
         safe_name = (
-            record.name.replace(" ", "_")
-            .replace("/", "_")
-            .replace("\\", "_")
-            .replace(":", "_")
+            record.name.replace(" ", "_").replace("/", "_").replace("\\", "_").replace(":", "_")
         )
         filename = f"editable_{safe_name}_{session_id}.zip"
     else:
@@ -367,9 +360,7 @@ async def get_session_diff(session_id: str) -> JSONResponse:
     modified = workspace / "agent_workspace" / "editable"
 
     if not original.is_dir():
-        raise HTTPException(
-            404, "No original snapshot found (session may predate diff support)"
-        )
+        raise HTTPException(404, "No original snapshot found (session may predate diff support)")
     if not modified.is_dir():
         raise HTTPException(404, "No editable directory found")
 
@@ -391,7 +382,7 @@ async def get_file_diff(session_id: str, path: str) -> JSONResponse:
     try:
         original_file.resolve().relative_to((workspace / "editable_original").resolve())
     except ValueError:
-        raise HTTPException(403, "Access denied: path escapes session workspace")
+        raise HTTPException(403, "Access denied: path escapes session workspace") from None
 
     original_lines = _read_file_lines(original_file)
     modified_lines = _read_file_lines(modified_file)
@@ -429,9 +420,7 @@ async def get_conversation(session_id: str) -> JSONResponse:
 
     conv_path = workspace / "conversation.json"
     if not conv_path.is_file():
-        raise HTTPException(
-            404, "Conversation not found (session may still be running)"
-        )
+        raise HTTPException(404, "Conversation not found (session may still be running)")
 
     import json as _json
 
@@ -589,10 +578,10 @@ def _compute_diffs(original_dir: Path, modified_dir: Path) -> list[dict[str, Any
 
         if diff_lines:
             added = sum(
-                1 for l in diff_lines if l.startswith("+") and not l.startswith("+++")
+                1 for line in diff_lines if line.startswith("+") and not line.startswith("+++")
             )
             removed = sum(
-                1 for l in diff_lines if l.startswith("-") and not l.startswith("---")
+                1 for line in diff_lines if line.startswith("-") and not line.startswith("---")
             )
             status = (
                 "added"

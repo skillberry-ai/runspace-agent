@@ -24,7 +24,7 @@ container = ["docker>=7.0.0"]
 server = ["fastapi>=0.104.0", "uvicorn[standard]>=0.24.0"]
 examples = ["mcp>=1.0"]
 all = ["runspace-agent[claude,container,server,examples]"]
-dev = ["pytest>=7.0", "pytest-asyncio>=0.21.0"]
+dev = ["pytest>=7.0", "pytest-asyncio>=0.21.0", "ruff>=0.6"]
 
 [build-system]
 requires = ["setuptools", "wheel"]
@@ -40,3 +40,22 @@ where = ["src"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = ["examples", "skillberry-skill-maker-future-integration", "frontend"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "W",   # pycodestyle warnings
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]

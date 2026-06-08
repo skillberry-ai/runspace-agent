@@ -17,7 +17,6 @@ from pydantic import BaseModel, ConfigDict
 
 from runspace_agent.agents.base import AgentResult, FilesystemAgent
 from runspace_agent.prompt import SummarySection
-from runspace_agent.skills import Skill
 
 
 class RunspaceSession(BaseModel):

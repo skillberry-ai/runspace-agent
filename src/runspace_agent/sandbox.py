@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-_DOTDOT_RE = re.compile(r'(?:^|[/\\])\.\.(?:[/\\]|$)')
+_DOTDOT_RE = re.compile(r"(?:^|[/\\])\.\.(?:[/\\]|$)")
 
 
 def _resolve(p: str) -> Path:
@@ -66,9 +66,7 @@ def make_sandbox_hook(session_dir: Path):
     return _sandbox_hook
 
 
-def _check_tool(
-    tool_name: str, tool_input: dict[str, Any], session: Path
-) -> str | None:
+def _check_tool(tool_name: str, tool_input: dict[str, Any], session: Path) -> str | None:
     """Return a denial reason if the tool call escapes *session*, else None."""
     if tool_name in ("Write", "Edit", "Read"):
         file_path = tool_input.get("file_path", "")

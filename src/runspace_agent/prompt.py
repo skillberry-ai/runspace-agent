@@ -42,9 +42,7 @@ def build_prompt(
     editable_desc = editable_description or (
         "This directory contains files you should read and modify."
     )
-    context_desc = context_description or (
-        "This directory contains read-only reference material."
-    )
+    context_desc = context_description or ("This directory contains read-only reference material.")
 
     summary_sections: list[SummarySection] = [
         SummarySection(
@@ -79,9 +77,7 @@ def build_prompt(
     if extra_summary_sections:
         summary_sections.extend(extra_summary_sections)
 
-    numbered_sections = "\n".join(
-        s.to_markdown(i) for i, s in enumerate(summary_sections, 1)
-    )
+    numbered_sections = "\n".join(s.to_markdown(i) for i, s in enumerate(summary_sections, 1))
 
     return f"""\
 You have access to two directories:

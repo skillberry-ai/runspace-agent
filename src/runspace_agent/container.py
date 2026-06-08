@@ -69,7 +69,9 @@ def _serialize_agent_options(agent_options: Any) -> dict[str, Any]:
 
     mcp_servers = getattr(agent_options, "mcp_servers", None)
     if mcp_servers:
-        result["mcp_servers"] = dict(mcp_servers) if not isinstance(mcp_servers, (str, Path)) else str(mcp_servers)
+        result["mcp_servers"] = (
+            dict(mcp_servers) if not isinstance(mcp_servers, (str, Path)) else str(mcp_servers)
+        )
 
     return result
 
@@ -289,9 +291,7 @@ async def _run_persistent(
     config_data.update(_serialize_agent_options(session.agent_options))
 
     config_json = json.dumps(config_data)
-    container.exec_run(
-        f"bash -c 'echo {json.dumps(config_json)} > {session_path}/config.json'"
-    )
+    container.exec_run(f"bash -c 'echo {json.dumps(config_json)} > {session_path}/config.json'")
 
     # Build environment for exec
     env_vars: list[str] = [f"RUNSPACE_CONFIG={session_path}/config.json"]

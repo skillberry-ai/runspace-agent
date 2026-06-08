@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel
@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from runspace_agent.prompt import SummarySection
 
 
-class SessionStatus(str, Enum):
+class SessionStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"

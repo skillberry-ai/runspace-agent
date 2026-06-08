@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import shutil
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,13 +19,19 @@ from runspace_agent.server.models import SessionStatus
 class SessionRecord:
     """In-memory record of a session."""
 
-    def __init__(self, session_id: str, workspace_dir: Path | None = None, name: str | None = None, agent_type: str = "") -> None:
+    def __init__(
+        self,
+        session_id: str,
+        workspace_dir: Path | None = None,
+        name: str | None = None,
+        agent_type: str = "",
+    ) -> None:
         self.session_id = session_id
         self.name = name
         self.agent_type = agent_type
         self.status = SessionStatus.PENDING
-        self.created_at = datetime.now(timezone.utc)
-        self.last_accessed = datetime.now(timezone.utc)
+        self.created_at = datetime.now(UTC)
+        self.last_accessed = datetime.now(UTC)
         self.workspace_dir = workspace_dir
         self.started_at: float | None = None  # time.monotonic() when run began
         self.duration_seconds: float | None = None
@@ -37,7 +43,7 @@ class SessionRecord:
         self.task: asyncio.Task[Any] | None = None
 
     def touch(self) -> None:
-        self.last_accessed = datetime.now(timezone.utc)
+        self.last_accessed = datetime.now(UTC)
 
 
 class SessionManager:
@@ -69,7 +75,7 @@ class SessionManager:
             self._cleanup_stale()
 
     def _cleanup_stale(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         stale_ids = []
         for sid, record in self._sessions.items():
             elapsed = (now - record.last_accessed).total_seconds()
@@ -82,7 +88,13 @@ class SessionManager:
         for sid in stale_ids:
             self.remove_session(sid)
 
-    def register(self, session_id: str, workspace_dir: Path | None = None, name: str | None = None, agent_type: str = "") -> SessionRecord:
+    def register(
+        self,
+        session_id: str,
+        workspace_dir: Path | None = None,
+        name: str | None = None,
+        agent_type: str = "",
+    ) -> SessionRecord:
         record = SessionRecord(session_id, workspace_dir, name=name, agent_type=agent_type)
         self._sessions[session_id] = record
         return record
@@ -127,21 +139,24 @@ class SessionManager:
         temp_base = Path(tempfile.gettempdir())
         for entry in temp_base.iterdir():
             if entry.is_dir() and entry.name.startswith("runspace_"):
-                sid = entry.name[len("runspace_"):]
+                sid = entry.name[len("runspace_") :]
                 if sid and sid not in known_ids and entry.resolve() not in active_dirs:
                     rec = SessionRecord(sid, workspace_dir=entry)
                     rec.status = SessionStatus.COMPLETED
                     rec.created_at = datetime.fromtimestamp(
-                        entry.stat().st_ctime, tz=timezone.utc,
+                        entry.stat().st_ctime,
+                        tz=UTC,
                     )
                     rec.last_accessed = datetime.fromtimestamp(
-                        entry.stat().st_mtime, tz=timezone.utc,
+                        entry.stat().st_mtime,
+                        tz=UTC,
                     )
                     # Try to recover metadata from conversation.json
                     conv = entry / "conversation.json"
                     if conv.is_file():
                         try:
                             import json
+
                             data = json.loads(conv.read_text(encoding="utf-8"))
                             if isinstance(data, list):
                                 for msg in reversed(data):
@@ -150,7 +165,9 @@ class SessionManager:
                                         rec.total_cost_usd = msg.get("total_cost_usd")
                                         usage = msg.get("usage")
                                         if isinstance(usage, dict):
-                                            rec.total_tokens = usage.get("input_tokens", 0) + usage.get("output_tokens", 0)
+                                            rec.total_tokens = usage.get(
+                                                "input_tokens", 0
+                                            ) + usage.get("output_tokens", 0)
                                         break
                             else:
                                 rec.duration_ms = data.get("duration_ms", 0)

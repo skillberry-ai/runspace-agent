@@ -47,7 +47,8 @@ def _check_docker_running(docker: str) -> None:
         )
     except subprocess.CalledProcessError:
         print(
-            "ERROR: Docker is not running.\nPlease ensure the Docker engine is installed and running, then try again.",
+            "ERROR: Docker is not running.\n"
+            "Please ensure the Docker engine is installed and running, then try again.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -148,7 +149,10 @@ def _prepare_build_context() -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="runspace-srv",
-        description="Start the Runspace Agent server (local execution by default; --docker for container mode).",
+        description=(
+            "Start the Runspace Agent server "
+            "(local execution by default; --docker for container mode)."
+        ),
     )
     parser.add_argument(
         "--port",
