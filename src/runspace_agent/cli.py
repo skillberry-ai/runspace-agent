@@ -151,7 +151,7 @@ def main() -> None:
         prog="runspace-srv",
         description=(
             "Start the Runspace Agent server "
-            "(local execution by default; --docker for container mode)."
+            "(container execution by default; --no-docker for local mode)."
         ),
     )
     parser.add_argument(
@@ -179,11 +179,12 @@ def main() -> None:
     parser.add_argument(
         "--docker",
         action=argparse.BooleanOptionalAction,
-        default=False,
+        default=True,
         help=(
-            "Run the Docker pre-flight (daemon check + image build) before "
-            "starting. Needed only for container-mode sessions; off by default "
-            "since sessions run locally."
+            "Run sessions in Docker containers (the default) and run the Docker "
+            "pre-flight (daemon check + image build) before starting. Pass "
+            "--no-docker to run sessions locally on the host instead, with no "
+            "Docker dependency."
         ),
     )
     parser.add_argument(
@@ -196,8 +197,14 @@ def main() -> None:
     # Propagate session TTL (converted to seconds) to the server via environment variable
     os.environ["RUNSPACE_SESSION_TTL"] = str(args.session_ttl * SECONDS_IN_HOUR)
 
-    # Docker pre-flight (opt-in; --rebuild implies it)
-    if args.docker or args.rebuild:
+    # Container mode is the default; --no-docker switches to local. --rebuild
+    # implies Docker. This becomes the server's default session mode for any
+    # /run request that doesn't specify one explicitly.
+    docker_enabled = args.docker or args.rebuild
+    os.environ["RUNSPACE_DEFAULT_MODE"] = "container" if docker_enabled else "local"
+
+    # Docker pre-flight (skipped with --no-docker)
+    if docker_enabled:
         docker = _docker_bin()
         _check_docker_running(docker)
         _ensure_image(docker, force_rebuild=args.rebuild)

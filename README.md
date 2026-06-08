@@ -63,14 +63,17 @@ uv pip install -e ".[all]"
 runspace-srv
 ```
 
-This starts the API server + React UI on port 6767. Sessions run **locally** on the
-host by default — no Docker required. For container-mode sessions, add `--docker` to
-run the Docker pre-flight (verify the daemon, build `runspace-agent:latest` if missing)
-before serving:
+This starts the API server + React UI on port 6767. Sessions run inside a Docker
+**container** by default, so starting the server runs a Docker pre-flight (verify
+the daemon, build `runspace-agent:latest` if missing). To run sessions **locally**
+on the host instead — no Docker required — start with `--no-docker`:
 
 ```bash
-runspace-srv --docker
+runspace-srv --no-docker
 ```
+
+An explicit `mode` in a `POST /run` request always overrides this default; the CLI
+flag only sets the default for requests that don't specify one.
 
 Open in your browser:
 - **http://localhost:6767/ui** — Web UI (React SPA)
@@ -312,11 +315,13 @@ There are two ways to work with the UI:
 ## Docker
 
 The `runspace-agent:latest` image (required for container mode) is built
-automatically the first time you start the server with the Docker pre-flight:
+automatically the first time you start the server, since the Docker pre-flight
+runs by default:
 
 ```bash
-runspace-srv --docker      # builds the image if missing, then serves
-runspace-srv --rebuild     # force a rebuild, then serves
+runspace-srv              # builds the image if missing, then serves
+runspace-srv --rebuild    # force a rebuild, then serves
+runspace-srv --no-docker  # skip Docker entirely; run sessions locally
 ```
 
 The build context is assembled from the installed package, so this works the same

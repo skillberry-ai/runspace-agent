@@ -87,6 +87,10 @@ async def create_run(req: RunRequest) -> SessionInfo:
         agent_settings=settings,
     )
 
+    # Resolve the execution mode: an explicit request value wins, otherwise fall
+    # back to the server default set by the CLI (container unless --no-docker).
+    mode = req.mode or os.environ.get("RUNSPACE_DEFAULT_MODE") or "container"
+
     session = RunspaceSession(
         editable_dir=Path(req.editable_dir),
         context_dir=Path(req.context_dir),
@@ -97,7 +101,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
         agent_options=agent_options,
         skills_dir=Path(req.skills_dir) if req.skills_dir else None,
         preinstalled_skills=req.preinstalled_skills,
-        mode=req.mode,  # type: ignore[arg-type]
+        mode=mode,  # type: ignore[arg-type]
         output_zip=req.output_zip,
         container_image=req.container_image,
         container_memory=req.container_memory,

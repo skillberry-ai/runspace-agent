@@ -28,7 +28,9 @@ class RunRequest(BaseModel):
     context_description: str = ""
     skills_dir: str | None = None
     preinstalled_skills: list[str] | None = None
-    mode: str = "local"
+    # None means "use the server's default mode" (set by the runspace-srv CLI:
+    # container unless started with --no-docker).
+    mode: str | None = None
     output_zip: bool = False
     mcp_servers: dict[str, Any] | None = None
     # Agent selection and settings
