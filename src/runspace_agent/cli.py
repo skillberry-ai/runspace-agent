@@ -12,6 +12,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 DEFAULT_PORT = 6767
@@ -66,23 +67,14 @@ def _ensure_image(docker: str, *, force_rebuild: bool = False) -> None:
     action = "Rebuilding" if force_rebuild else "Building"
     print(f"{action} Docker image '{IMAGE_NAME}'...")
 
-    # Find Dockerfile: next to the package root (editable install) or CWD
-    dockerfile = _find_dockerfile()
-    if not dockerfile:
-        print(
-            f"ERROR: Cannot find Dockerfile to build '{IMAGE_NAME}'.\n"
-            "Either run this command from the runspace-agent repo root,\n"
-            "or build the image manually:\n"
-            f"  docker build -t {IMAGE_NAME} .",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    build_context = str(dockerfile.parent)
-    print(f"Building from {build_context} ...")
+    # Assemble a self-contained build context from the installed package so the
+    # build works regardless of how runspace-agent was installed (editable, git,
+    # or wheel) and from any working directory.
+    build_context = _prepare_build_context()
     try:
+        print(f"Building from {build_context} ...")
         subprocess.run(
-            [docker, "build", "-t", IMAGE_NAME, build_context],
+            [docker, "build", "-t", IMAGE_NAME, str(build_context)],
             check=True,
         )
     except subprocess.CalledProcessError:
@@ -92,25 +84,65 @@ def _ensure_image(docker: str, *, force_rebuild: bool = False) -> None:
             file=sys.stderr,
         )
         sys.exit(1)
+    finally:
+        shutil.rmtree(build_context, ignore_errors=True)
 
     print(f"Image '{IMAGE_NAME}' built successfully.\n")
 
 
-def _find_dockerfile() -> Path | None:
-    """Locate the Dockerfile shipped with the package."""
-    # 1. Relative to this file: src/runspace_agent/cli.py -> repo root
-    pkg_dir = Path(__file__).resolve().parent  # src/runspace_agent/
-    repo_root = pkg_dir.parent.parent  # two levels up
-    candidate = repo_root / "Dockerfile"
-    if candidate.is_file():
-        return candidate
+# Runtime deps to fall back on if package metadata is unavailable (these mirror
+# the base dependencies + the [claude] extra in pyproject.toml).
+_FALLBACK_REQUIREMENTS = ["pydantic>=2.0", "claude-code-sdk>=0.0.25"]
 
-    # 2. Current working directory
-    cwd_candidate = Path.cwd() / "Dockerfile"
-    if cwd_candidate.is_file():
-        return cwd_candidate
 
-    return None
+def _runtime_requirements() -> list[str]:
+    """Return the deps the in-container agent needs: base + the ``claude`` extra.
+
+    Read from the installed distribution metadata so the list never drifts from
+    pyproject.toml. Entries with no environment marker are base dependencies;
+    entries marked ``extra == "claude"`` are the claude extra. Everything else
+    (server/container/examples/dev/all extras) is excluded — the container only
+    runs ``python -m runspace_agent.entrypoint``.
+    """
+    try:
+        from importlib.metadata import requires
+
+        raw = requires("runspace-agent") or []
+    except Exception:
+        return list(_FALLBACK_REQUIREMENTS)
+
+    reqs: list[str] = []
+    for entry in raw:
+        spec, _, marker = entry.partition(";")
+        marker = marker.strip()
+        if not marker:
+            reqs.append(spec.strip())  # base dependency
+        elif 'extra == "claude"' in marker or "extra == 'claude'" in marker:
+            reqs.append(spec.strip())  # the claude extra
+    return reqs or list(_FALLBACK_REQUIREMENTS)
+
+
+def _prepare_build_context() -> Path:
+    """Assemble a temporary Docker build context from the installed package.
+
+    Layout produced (consumed by ``_docker/Dockerfile``):
+        <ctx>/Dockerfile        the shipped build recipe
+        <ctx>/requirements.txt  base + claude runtime deps
+        <ctx>/runspace_agent/   the installed package source tree
+    """
+    pkg_dir = Path(__file__).resolve().parent  # the installed runspace_agent/ package
+    ctx = Path(tempfile.mkdtemp(prefix="runspace-build-"))
+
+    shutil.copytree(
+        pkg_dir,
+        ctx / "runspace_agent",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    shutil.copy(pkg_dir / "_docker" / "Dockerfile", ctx / "Dockerfile")
+    (ctx / "requirements.txt").write_text(
+        "\n".join(_runtime_requirements()) + "\n", encoding="utf-8"
+    )
+    return ctx
 
 
 def main() -> None:
