@@ -13,6 +13,7 @@ class MockFilesystemAgent:
     """A mock agent that writes a marker file to prove it ran."""
 
     skills_folder_name: str = ".mock/skills"
+    default_skills_dir: Path | None = None
 
     async def run(self, workspace: Workspace) -> AgentResult:
         marker = workspace.editable_dir / "agent_was_here.txt"
@@ -24,6 +25,7 @@ class FailingAgent:
     """A mock agent that always fails."""
 
     skills_folder_name: str = ".mock/skills"
+    default_skills_dir: Path | None = None
 
     async def run(self, workspace: Workspace) -> AgentResult:
         return AgentResult(success=False, error="intentional failure")

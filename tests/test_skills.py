@@ -21,7 +21,7 @@ def test_prepare_skills_with_user_dir(tmp_path: Path) -> None:
 
     result = prepare_skills(
         skills_dir=user_skills,
-        use_defaults=False,
+        default_skills_dir=None,
         workspace_root=workspace,
         folder_name=".claude/skills",
     )
@@ -37,7 +37,7 @@ def test_prepare_skills_no_skills(tmp_path: Path) -> None:
 
     result = prepare_skills(
         skills_dir=None,
-        use_defaults=False,
+        default_skills_dir=None,
         workspace_root=workspace,
         folder_name=".claude/skills",
     )
@@ -58,7 +58,7 @@ def test_prepare_skills_creates_folder_structure(tmp_path: Path) -> None:
 
     result = prepare_skills(
         skills_dir=user_skills,
-        use_defaults=False,
+        default_skills_dir=None,
         workspace_root=workspace,
         folder_name=".opencode/skills",
     )
