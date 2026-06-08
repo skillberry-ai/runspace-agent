@@ -1,4 +1,7 @@
-.claude/
+# Local Claude Code config — ignore everything except the bundled default
+# skills, which ClaudeCodeAgent loads from <repo-root>/.claude/skills at runtime.
+.claude/*
+!.claude/skills/
 **editable_**
 **investigations
 **skillberry-skill-maker-future-integration
