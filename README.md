@@ -262,27 +262,10 @@ In **container mode**, Docker provides true isolation:
 | Mode | When to use |
 |------|-------------|
 | `mode="local"` | Development, debugging, fast iteration |
-| `mode="container"` + `container_mode="ephemeral"` | Production, full isolation per run |
-| `mode="container"` + `container_mode="persistent"` | Development with containers, faster startup |
+| `mode="container"` | Production — full isolation, a fresh container per run |
 
-#### Container sub-modes: ephemeral vs persistent
-
-When `mode="container"`, `container_mode` controls the container lifecycle:
-
-| | **ephemeral** (default, recommended) | **persistent** |
-|---|---|---|
-| Container | A brand-new container per run, auto-removed (`--rm`) when it exits | One long-lived container (`runspace-persistent-<image>`) reused across runs via `docker exec` |
-| Files | Host workspace bind-mounted into the container — results survive on the host after the container dies | Copied **into** the container; nothing is written to the host |
-| Startup | Slower (creates a container each run) | Faster (just execs into the running one) |
-| Cleanup | Automatic | Never auto-stopped — remove it yourself (`docker rm -f runspace-persistent-<image>`) |
-| Isolation | Fresh sandbox every run | Shared container; state can accumulate between runs |
-| UI / API | Appears in the session list; files browsable/downloadable | Files live inside the container, so the session does **not** appear in the host scan and the file/diff/download endpoints don't apply |
-
-**Use `ephemeral` unless you have a specific reason not to.** It is the default,
-the better-isolated option, and the only container path exercised by the smoke
-test — `persistent` is best treated as an experimental fast-iteration convenience.
-
-In **ephemeral** mode the container is disposable but your data is not: the agent
+In **container** mode each run gets a brand-new container that is auto-removed
+(`--rm`) when it exits. The container is disposable but your data is not: the agent
 writes to a host directory bind-mounted at `/workspace`, so the editable output,
 diffs, and conversation remain on the host after the container is removed (see
 [Sandbox](#sandbox)). Container runs never sync back to your original
@@ -389,8 +372,8 @@ curl -X POST http://localhost:6767/run \
 
 Every session workspace lives under a single parent folder, `{base}/runspace/`,
 with one subdirectory per session (its editable copy, pre-run snapshot, context,
-conversation, and metadata). For local and ephemeral-container runs these
-directories are what the UI scans and what the file/diff/download endpoints read.
+conversation, and metadata). These directories are what the UI scans and what the
+file/diff/download endpoints read.
 
 By default `{base}` is the system temp directory. Set the optional
 **`RUNSPACE_DATA_DIR`** environment variable to relocate the `runspace/` folder

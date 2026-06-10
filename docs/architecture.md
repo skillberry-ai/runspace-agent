@@ -47,8 +47,8 @@ RunspaceSession ──► run_agent()           core.py
   sandbox hooks, runs the agent in-process, and syncs results back.
 - **`container.py`** — `run_container()` runs the agent inside the
   `runspace-agent:latest` Docker image with hardened settings
-  (`--cap-drop ALL`, `no-new-privileges`, memory/CPU limits). Supports
-  *ephemeral* (throwaway per run) and *persistent* container modes.
+  (`--cap-drop ALL`, `no-new-privileges`, memory/CPU limits). Each run gets a
+  fresh, auto-removed container.
 - **`entrypoint.py`** — the process that runs *inside* the container: it reads
   the serialized config, rebuilds the workspace and sandbox hooks, and invokes
   the agent.
