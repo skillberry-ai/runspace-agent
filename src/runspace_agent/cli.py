@@ -1,8 +1,8 @@
 """CLI entry point for ``runspace-srv``.
 
-Starts the FastAPI server. Sessions default to local (no-Docker) execution.
-Pass ``--docker`` to run the Docker pre-flight (daemon check + image build)
-for clients that request container-mode sessions.
+Starts the FastAPI server. Sessions default to Docker container execution,
+running the Docker pre-flight (daemon check + image build) before serving.
+Pass ``--no-docker`` to run sessions locally on the host instead.
 """
 
 from __future__ import annotations

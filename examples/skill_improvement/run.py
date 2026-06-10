@@ -11,7 +11,7 @@ Four modes are available (ordered by recommendation):
          uv pip install -e ".[all]"  (includes examples extra for MCP server)
          Docker running + runspace-agent:latest image built
          Start the server FIRST in a separate terminal:
-             runspace-srv --docker
+             runspace-srv
      Run:
          uv run python examples/skill_improvement/run.py server-container
 
@@ -24,7 +24,7 @@ Four modes are available (ordered by recommendation):
      Prerequisites:
          uv pip install -e ".[all]"  (includes examples extra for MCP server)
          Start the server FIRST in a separate terminal:
-             runspace-srv
+             runspace-srv --no-docker
      Run:
          uv run python examples/skill_improvement/run.py server-local
 
@@ -125,8 +125,8 @@ You are a skill improvement specialist. Analyze the execution traces and fix the
 # Option 1 & 2: server (HTTP API) — recommended
 #
 # Start the server first in a separate terminal:
-#     runspace-srv            # server-local (no Docker)
-#     runspace-srv --docker   # server-container (agent runs in Docker)
+#     runspace-srv              # server-container (agent runs in Docker, the default)
+#     runspace-srv --no-docker  # server-local (no Docker)
 # Then run this script:
 #     uv run python examples/skill_improvement/run.py server-local
 #     uv run python examples/skill_improvement/run.py server-container

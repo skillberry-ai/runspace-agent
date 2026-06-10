@@ -82,9 +82,9 @@ RunspaceSession ──► run_agent()           core.py
 
 ### CLI
 
-- **`cli.py`** — the `runspace-srv` entry point. Starts the server (local
-  execution by default; `--docker` runs the Docker pre-flight and enables
-  container mode).
+- **`cli.py`** — the `runspace-srv` entry point. Starts the server (Docker
+  container execution by default, running the Docker pre-flight first;
+  `--no-docker` runs sessions locally on the host).
 
 ## Adding a new agent backend
 

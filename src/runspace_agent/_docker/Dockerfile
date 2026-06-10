@@ -8,7 +8,7 @@
 #   ./requirements.txt      runtime deps (base + the [claude] extra)
 #   ./runspace_agent/       the installed package source tree
 #
-# The image is built automatically by `runspace-srv --docker` (or `--rebuild`).
+# The image is built automatically by `runspace-srv` (or `--rebuild`).
 FROM python:3.11-slim
 
 # System deps + Node.js (required for the Claude Code runtime)
