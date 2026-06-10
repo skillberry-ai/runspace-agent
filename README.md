@@ -184,13 +184,16 @@ Skills are agent-specific tool extensions. Each `FilesystemAgent` declares a
 `skills_folder_name` (e.g. `.claude/skills` for Claude Code) and the library
 copies skills into the workspace.
 
-Each agent declares its own `default_skills_dir` — the directory containing its
-bundled preinstalled skills. The `ClaudeCodeAgent` ships with:
+There are **two ways** to give an agent skills, and you can use either or both:
+
+#### 1. Preinstalled skills (`preinstalled_skills`)
+
+Each agent ships with a set of bundled skills. The `ClaudeCodeAgent` ships with:
 - **skill-creator** — Create, modify, improve, and evaluate skills
 - **mcp-builder** — Build MCP servers in Python (FastMCP) or Node/TypeScript
 
 Preinstalled skills are **opt-in** — none are included unless you select them
-by name via `preinstalled_skills`:
+by name. Only the names you list are loaded:
 ```python
 # No preinstalled skills (default)
 session = RunspaceSession(...)
@@ -199,8 +202,10 @@ session = RunspaceSession(...)
 session = RunspaceSession(..., preinstalled_skills=["mcp-builder"])
 ```
 
-To add your own skills, point `skills_dir` at a directory that contains one
-subdirectory per skill (each with its own `SKILL.md`):
+#### 2. Your own skills (`skills_dir`)
+
+Point `skills_dir` at a directory that contains one subdirectory per skill
+(each with its own `SKILL.md`):
 ```
 my-skills/
 ├── my-skill/
@@ -211,8 +216,16 @@ my-skills/
 ```python
 session = RunspaceSession(..., skills_dir=Path("my-skills"))
 ```
-Custom skills override preinstalled ones with the same name. You can combine
-both — select a preinstalled skill *and* supply your own directory.
+
+Combine both — select preinstalled skills *and* supply your own directory.
+Custom skills override preinstalled ones with the same name:
+```python
+session = RunspaceSession(
+    ...,
+    preinstalled_skills=["mcp-builder"],
+    skills_dir=Path("my-skills"),
+)
+```
 
 Use `GET /skills` to list the available preinstalled skills via the API.
 
