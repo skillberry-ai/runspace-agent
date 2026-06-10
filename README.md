@@ -29,23 +29,23 @@ Install by name and pick the extras you need — a plain install pulls in the co
 library only (no agent, server, or container support):
 
 ```bash
-pip install "runspace-agent[all]"          # everything (recommended): server + UI, Claude agent, containers
-pip install "runspace-agent[server]"       # just the server + Web UI
-pip install "runspace-agent[claude]"       # just the Claude Code agent
-pip install "runspace-agent[container]"    # just Docker container execution
-pip install runspace-agent                 # core library only
+python -m pip install "runspace-agent[all]"          # everything (recommended): server + UI, Claude agent, containers
+python -m pip install "runspace-agent[server]"       # just the server + Web UI
+python -m pip install "runspace-agent[claude]"       # just the Claude Code agent
+python -m pip install "runspace-agent[container]"    # just Docker container execution
+python -m pip install runspace-agent                 # core library only
 ```
 
-Mix extras as needed, e.g. `pip install "runspace-agent[server,claude,container]"`.
+Mix extras as needed, e.g. `python -m pip install "runspace-agent[server,claude,container]"`.
 (Quote the brackets — some shells treat `[]` as a glob.) After installing with
 `[server]` (or `[all]`), start it with `runspace-srv` — see [Quick Start](#quick-start).
 
-> **Using a virtualenv?** Install with `python -m pip install "runspace-agent[all]"`
-> (not a bare `pip`) so it goes into the **active** environment. If you see
-> *"Defaulting to user installation…"*, your `pip` is pointing at a different Python
-> than your venv — `python -m pip` avoids that. The same command, `runspace-srv`,
-> works for every install method; if your shell can't find it (e.g. a `--user`
-> install whose Scripts dir isn't on PATH), run **`python -m runspace_agent`** instead.
+> **Why `python -m pip` and not just `pip`?** It installs into the **active**
+> interpreter/virtualenv. A bare `pip` may point at a different Python — the tell is
+> *"Defaulting to user installation…"*, which lands the package (and the
+> `runspace-srv` launcher) outside your venv and off your PATH. `runspace-srv` is the
+> same command for every install method; if your shell still can't find it, run
+> **`python -m runspace_agent`** instead.
 
 ### From source (development)
 
@@ -97,7 +97,7 @@ uv pip install -e ".[dev]"
 The fastest way to get started is with the built-in server:
 
 ```bash
-pip install "runspace-agent[all]"
+python -m pip install "runspace-agent[all]"
 runspace-srv
 ```
 
