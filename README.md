@@ -330,6 +330,25 @@ curl -X POST http://localhost:6767/run \
   -d '{"editable_dir": "./updated_skill", "context_dir": "./new_context", "prompt": "..."}'
 ```
 
+### Session Storage
+
+Every session workspace lives under a single parent folder, `{base}/runspace/`,
+with one subdirectory per session (its editable copy, pre-run snapshot, context,
+conversation, and metadata). For local and ephemeral-container runs these
+directories are what the UI scans and what the file/diff/download endpoints read.
+
+By default `{base}` is the system temp directory. Set the optional
+**`RUNSPACE_DATA_DIR`** environment variable to relocate the `runspace/` folder
+to a stable, discoverable location instead:
+
+```bash
+RUNSPACE_DATA_DIR=~/.runspace runspace-srv
+# -> workspaces live under ~/.runspace/runspace/<session_id>/
+```
+
+This is handy when you want all managed session data in one known place (e.g. to
+inspect, back up, or persist it across reboots) rather than scattered in temp.
+
 ### Manual Start (Advanced)
 
 If you prefer to manage Docker separately:
