@@ -1,8 +1,16 @@
 # runspace_agent
 
-Run AI agents fully autonomously on a filesystem directory — MCP servers and skills
-enabled, with zero human approvals or permission prompts — safely isolated in a
-hardened Docker container (or locally).
+Run AI agents **fully autonomously** on a filesystem directory — MCP servers and
+skills enabled, with zero human approvals or permission prompts — safely isolated
+in a hardened Docker container (or locally).
+
+It also **decouples agent execution from your application**. Instead of embedding
+agent SDKs, sandboxes, and long-running jobs inside your app, you run the runspace
+server once and treat every agent run as a single **HTTP request** — `POST` a job
+(editable dir, context, prompt, and which agent) and poll for the result. Agents are
+pluggable behind one uniform API via a small `FilesystemAgent` protocol — Claude
+Code ships built-in, and others (Codex, etc.) can be added — so your application
+talks to the same endpoint no matter which agent runs underneath.
 
 Given an **editable directory** (the agent's workspace), a **read-only context directory**
 (traces, domain knowledge, etc.), and a **prompt**, `runspace_agent` runs an AI agent
