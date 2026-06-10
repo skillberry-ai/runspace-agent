@@ -62,7 +62,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
-from common import build_env, print_result
+from common import print_result
+
+from runspace_agent.agents.claude_code import build_claude_env
 from prompt import build_prompt
 
 from runspace_agent.prompt import SummarySection
@@ -139,7 +141,7 @@ def run_server(mode: str = "container") -> None:
         "agent_type": "claude-code",
         "mode": mode,
         "output_zip": False,
-        "agent_settings": {"env": {k: v for k, v in build_env().items() if v}},
+        "agent_settings": {"env": {k: v for k, v in build_claude_env().items() if v}},
         "agent_max_turns": 50,
     }
 
@@ -197,7 +199,7 @@ async def run_library_container() -> None:
     from runspace_agent import RunspaceSession, run_agent
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
-    options = ClaudeCodeOptions(env=build_env(), max_turns=50)
+    options = ClaudeCodeOptions(env=build_claude_env(), max_turns=50)
     agent = ClaudeCodeAgent(options=options)
 
     session = RunspaceSession(
@@ -236,7 +238,7 @@ async def run_library_local() -> None:
     from runspace_agent import RunspaceSession, run_agent
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
-    options = ClaudeCodeOptions(env=build_env(), max_turns=50)
+    options = ClaudeCodeOptions(env=build_claude_env(), max_turns=50)
     agent = ClaudeCodeAgent(options=options)
 
     session = RunspaceSession(

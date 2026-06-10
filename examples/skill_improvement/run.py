@@ -57,7 +57,9 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from common import ClaudeModel, build_env, print_result
+from common import print_result
+
+from runspace_agent.agents.claude_code import ClaudeModel, build_claude_env
 
 from runspace_agent.prompt import SummarySection
 
@@ -156,7 +158,7 @@ def run_server(mode: str = "container") -> None:
         "mode": mode,
         "output_zip": False,
         "agent_settings": {
-            "env": {k: v for k, v in build_env(claude_model).items() if v}
+            "env": {k: v for k, v in build_claude_env(claude_model).items() if v}
         },
         "agent_max_turns": 50,
         "mcp_servers": _mcp_servers(mode),
@@ -217,7 +219,7 @@ async def run_library_container() -> None:
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
     options = ClaudeCodeOptions(
-        env=build_env(claude_model), max_turns=50, mcp_servers=_mcp_servers("container"),
+        env=build_claude_env(claude_model), max_turns=50, mcp_servers=_mcp_servers("container"),
     )
     agent = ClaudeCodeAgent(options=options)
 
@@ -258,7 +260,7 @@ async def run_library_local() -> None:
     from runspace_agent.agents.claude_code import ClaudeCodeAgent
 
     options = ClaudeCodeOptions(
-        env=build_env(claude_model), max_turns=50, mcp_servers=_mcp_servers("local"),
+        env=build_claude_env(claude_model), max_turns=50, mcp_servers=_mcp_servers("local"),
     )
     agent = ClaudeCodeAgent(options=options)
 
