@@ -40,6 +40,13 @@ Mix extras as needed, e.g. `pip install "runspace-agent[server,claude,container]
 (Quote the brackets — some shells treat `[]` as a glob.) After installing with
 `[server]` (or `[all]`), start it with `runspace-srv` — see [Quick Start](#quick-start).
 
+> **Using a virtualenv?** Install with `python -m pip install "runspace-agent[all]"`
+> (not a bare `pip`) so it goes into the **active** environment. If you see
+> *"Defaulting to user installation…"*, your `pip` is pointing at a different Python
+> than your venv — `python -m pip` avoids that. The same command, `runspace-srv`,
+> works for every install method; if your shell can't find it (e.g. a `--user`
+> install whose Scripts dir isn't on PATH), run **`python -m runspace_agent`** instead.
+
 ### From source (development)
 
 Only needed if you're **working on runspace-agent itself** (from a clone of this
