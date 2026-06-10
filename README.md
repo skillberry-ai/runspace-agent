@@ -295,6 +295,25 @@ diffs, and conversation remain on the host after the container is removed (see
 [Sandbox](#sandbox)). Container runs never sync back to your original
 `editable_dir` — changes live in the session workspace and are fetched via the API.
 
+#### Choosing the mode per request
+
+Each `POST /run` selects its own execution mode with the `mode` field
+(`"local"` or `"container"`), independently of how the server was started. The CLI
+flag only sets the **default** for requests that omit `mode`:
+
+- **`runspace-srv`** (default — container): runs a **Docker pre-flight at startup** —
+  it verifies the Docker daemon is running and builds the `runspace-agent:latest`
+  image if it's missing. If Docker isn't available, the server **fails fast at
+  startup** with a clear error, so container runs are guaranteed to work.
+- **`runspace-srv --no-docker`**: **skips** that pre-flight and defaults requests to
+  `local`.
+
+Because the pre-flight only happens at startup, a server started with `--no-docker`
+has **not** verified Docker or built the image. A request that then explicitly asks
+for `mode: "container"` will **fail at run time** (the session is marked `failed`,
+with a Docker error). If you want to serve container runs, start the server the
+normal way (with Docker) rather than `--no-docker`.
+
 ### Agent Credentials
 
 Credentials are **agent-specific** — there is no global API-key setting in the
