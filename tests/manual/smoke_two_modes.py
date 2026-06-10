@@ -6,7 +6,8 @@ real tokens. Run it by hand:
 
     python tests/manual/smoke_two_modes.py
 
-Assumes ``runspace-srv`` is already running on http://localhost:6767.
+Assumes ``runspace-srv`` is already running (set ``RUNSPACE_PORT`` to match its
+port; defaults to 6767).
 
 Auth: the agent needs credentials in its env to reach the model. This reads them
 from your shell (base URL + auth token, or an API key) and forwards them via
