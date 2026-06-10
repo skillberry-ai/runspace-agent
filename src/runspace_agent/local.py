@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import shutil
-import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,6 +15,7 @@ from runspace_agent.agents.base import AgentResult, FilesystemAgent, Workspace
 from runspace_agent.prompt import build_prompt
 from runspace_agent.sandbox import build_hooks_config
 from runspace_agent.skills import prepare_skills
+from runspace_agent.workspaces import session_workspace
 
 if TYPE_CHECKING:
     from runspace_agent.core import RunspaceSession
@@ -30,7 +30,7 @@ async def run_local(
 
     The workspace layout is::
 
-        {temp}/runspace_{session_id}/
+        {temp}/runspace/{session_id}/
             editable/          <- copy of session.editable_dir (agent modifies this)
             editable_original/ <- snapshot before agent runs (for diff)
             context/           <- copy of session.context_dir
@@ -44,8 +44,7 @@ async def run_local(
     # Create session workspace with isolated agent subdirectory.
     # The agent runs inside agent_workspace/ and is sandboxed there,
     # so it cannot touch session-level files like editable_original/.
-    temp_base = Path(tempfile.gettempdir())
-    workspace_root = temp_base / f"runspace_{session_id}"
+    workspace_root = session_workspace(session_id)
     workspace_root.mkdir(parents=True, exist_ok=True)
 
     agent_workspace = workspace_root / "agent_workspace"

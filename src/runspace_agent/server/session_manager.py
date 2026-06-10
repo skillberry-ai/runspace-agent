@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import shutil
-import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from runspace_agent.server.models import SessionStatus
+from runspace_agent.workspaces import session_workspace, workspaces_root
 
 
 class SessionRecord:
@@ -117,10 +117,10 @@ class SessionManager:
     def list_sessions(self, include_orphaned: bool = True) -> list[SessionRecord]:
         """Return all known sessions.
 
-        When *include_orphaned* is True (the default), the temp directory is
-        scanned for ``runspace_*`` workspace folders that are not tracked
-        in-memory (e.g. from a previous server process).  These are returned
-        as synthetic ``COMPLETED`` records so the UI always shows them.
+        When *include_orphaned* is True (the default), the workspaces root
+        (``{temp}/runspace/``) is scanned for session folders that are not
+        tracked in-memory (e.g. from a previous server process).  These are
+        returned as synthetic ``COMPLETED`` records so the UI always shows them.
         """
         records = list(self._sessions.values())
         if not include_orphaned:
@@ -136,10 +136,10 @@ class SessionManager:
             if r.status in (SessionStatus.RUNNING, SessionStatus.PENDING)
             and r.workspace_dir is not None
         }
-        temp_base = Path(tempfile.gettempdir())
-        for entry in temp_base.iterdir():
-            if entry.is_dir() and entry.name.startswith("runspace_"):
-                sid = entry.name[len("runspace_") :]
+        root = workspaces_root()
+        for entry in root.iterdir() if root.is_dir() else []:
+            if entry.is_dir():
+                sid = entry.name
                 if sid and sid not in known_ids and entry.resolve() not in active_dirs:
                     rec = SessionRecord(sid, workspace_dir=entry)
                     rec.status = SessionStatus.COMPLETED
@@ -199,7 +199,7 @@ class SessionManager:
                 shutil.rmtree(record.workspace_dir, ignore_errors=True)
 
         # Also clean up orphaned workspace on disk (not tracked in-memory)
-        workspace = Path(tempfile.gettempdir()) / f"runspace_{session_id}"
+        workspace = session_workspace(session_id)
         if workspace.is_dir():
             shutil.rmtree(workspace, ignore_errors=True)
             return True
@@ -222,10 +222,10 @@ class SessionManager:
             count += 1
         self._sessions.clear()
 
-        # 2. Remove orphaned runspace_* workspace dirs from temp
-        temp_base = Path(tempfile.gettempdir())
-        for entry in temp_base.iterdir():
-            if entry.is_dir() and entry.name.startswith("runspace_"):
+        # 2. Remove orphaned session workspace dirs from {temp}/runspace/
+        root = workspaces_root()
+        for entry in root.iterdir() if root.is_dir() else []:
+            if entry.is_dir():
                 shutil.rmtree(entry, ignore_errors=True)
                 count += 1
 
@@ -233,8 +233,7 @@ class SessionManager:
 
     def get_workspace_for_session(self, session_id: str) -> Path | None:
         """Return the workspace directory path for a session."""
-        temp_base = Path(tempfile.gettempdir())
-        workspace = temp_base / f"runspace_{session_id}"
+        workspace = session_workspace(session_id)
         if workspace.is_dir():
             return workspace
         record = self.get(session_id)

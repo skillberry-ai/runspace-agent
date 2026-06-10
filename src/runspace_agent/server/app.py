@@ -40,6 +40,7 @@ from runspace_agent.server.models import (
     SkillInfo,
 )
 from runspace_agent.server.session_manager import SessionManager
+from runspace_agent.workspaces import session_workspace
 
 app = FastAPI(title="Runspace Agent", version="0.1.0")
 app.add_middleware(
@@ -116,7 +117,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
 
     # Set workspace_dir eagerly so the orphan scanner skips this directory
     # while the agent is still running.
-    record.workspace_dir = Path(tempfile.gettempdir()) / f"runspace_{preliminary_id}"
+    record.workspace_dir = session_workspace(preliminary_id)
 
     async def _run() -> None:
         record.status = SessionStatus.RUNNING
