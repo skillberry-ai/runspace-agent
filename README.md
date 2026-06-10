@@ -225,6 +225,34 @@ In **container mode**, Docker provides true isolation:
 | `mode="container"` + `container_mode="ephemeral"` | Production, full isolation per run |
 | `mode="container"` + `container_mode="persistent"` | Development with containers, faster startup |
 
+### Authentication
+
+The agent process needs credentials in its environment to reach the model. There
+is **no single required variable** — pass whatever `claude-code-sdk` needs to
+authenticate: an Anthropic API key, or a base URL + auth token for a proxy/gateway
+(what the [`examples/`](examples/) use via their `build_env()` helper).
+
+- **Python API:** set them in `ClaudeCodeOptions(env={...})` (see [Python API](#python-api) above).
+- **HTTP API:** set them in the request body's `agent_settings.env`:
+
+```jsonc
+{
+  "editable_dir": "...", "context_dir": "...", "prompt": "...",
+  "agent_settings": {
+    "env": {
+      "ANTHROPIC_BASE_URL": "https://your-gateway.example.com",
+      "ANTHROPIC_AUTH_TOKEN": "...",
+      "ANTHROPIC_MODEL": "claude-opus-4-8"
+    }
+  }
+}
+```
+
+> **Container vs local:** a local-mode run may inherit auth from the host
+> environment, but a container is a clean room — it only receives what you put in
+> `agent_settings.env`. If a container session fails immediately with a non-zero
+> exit, missing credentials are the most common cause.
+
 ## Server
 
 ### API Endpoints
