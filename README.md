@@ -364,6 +364,16 @@ RUNSPACE_DATA_DIR=~/.runspace runspace-srv
 This is handy when you want all managed session data in one known place (e.g. to
 inspect, back up, or persist it across reboots) rather than scattered in temp.
 
+See [`.env.example`](.env.example) for a template covering `RUNSPACE_DATA_DIR`
+and the agent credential variables. Nothing auto-loads it, so copy it to `.env`
+and export it before starting the server:
+
+```bash
+cp .env.example .env   # then edit it
+set -a; source .env; set +a
+runspace-srv
+```
+
 ### Manual Start (Advanced)
 
 If you prefer to manage Docker separately:
