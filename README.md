@@ -319,9 +319,9 @@ Or via the `/run` API:
 ```
 
 Each source is installed into the agent's skills folder scoped to the agent's
-`npx_agent_name` (`claude` for Claude Code), i.e. roughly:
+`npx_agent_name` (`claude-code` for Claude Code), i.e. roughly:
 ```
-npx skills add <source> -a claude -s '*' -y --copy
+npx skills add <source> -a claude-code -s '*' -y --copy
 ```
 
 Notes:
