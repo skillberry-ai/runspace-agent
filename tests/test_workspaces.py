@@ -30,14 +30,11 @@ def test_session_workspace_is_under_root(monkeypatch, tmp_path):
 
 
 def test_session_meta_round_trip(tmp_path):
-    write_session_meta(tmp_path, mode="container", container_mode="ephemeral")
-    assert read_session_meta(tmp_path) == {
-        "mode": "container",
-        "container_mode": "ephemeral",
-    }
+    write_session_meta(tmp_path, mode="container")
+    assert read_session_meta(tmp_path) == {"mode": "container"}
 
 
-def test_session_meta_local_has_no_container_mode(tmp_path):
+def test_session_meta_local(tmp_path):
     write_session_meta(tmp_path, mode="local")
     assert read_session_meta(tmp_path) == {"mode": "local"}
 

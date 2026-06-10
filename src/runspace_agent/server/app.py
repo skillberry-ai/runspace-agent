@@ -107,7 +107,6 @@ async def create_run(req: RunRequest) -> SessionInfo:
         container_image=req.container_image,
         container_memory=req.container_memory,
         container_cpus=req.container_cpus,
-        container_mode=req.container_mode,  # type: ignore[arg-type]
         extra_summary_sections=req.extra_summary_sections,
     )
 
@@ -115,7 +114,6 @@ async def create_run(req: RunRequest) -> SessionInfo:
     preliminary_id = uuid.uuid4().hex[:12]
     record = manager.register(preliminary_id, name=req.name, agent_type=req.agent_type)
     record.mode = mode
-    record.container_mode = req.container_mode if mode == "container" else None
 
     # Set workspace_dir eagerly so the orphan scanner skips this directory
     # while the agent is still running.
@@ -154,7 +152,6 @@ async def create_run(req: RunRequest) -> SessionInfo:
         created_at=record.created_at.isoformat(),
         last_accessed=record.last_accessed.isoformat(),
         mode=record.mode,
-        container_mode=record.container_mode,
     )
 
 
@@ -189,7 +186,6 @@ async def list_sessions(status: SessionStatus | None = None) -> list[SessionInfo
             duration_seconds=_effective_duration(r),
             error=r.error,
             mode=getattr(r, "mode", None),
-            container_mode=getattr(r, "container_mode", None),
         )
         for r in records
     ]
@@ -220,7 +216,6 @@ async def get_session(session_id: str) -> SessionDetail:
             duration_seconds=_effective_duration(record),
             error=record.error,
             mode=record.mode,
-            container_mode=record.container_mode,
             total_tokens=record.total_tokens,
             total_cost_usd=record.total_cost_usd,
             duration_ms=record.duration_ms,
@@ -241,7 +236,6 @@ async def get_session(session_id: str) -> SessionDetail:
             workspace_dir=str(workspace),
             duration_seconds=round(elapsed, 2) if elapsed > 0 else None,
             mode=meta.get("mode"),
-            container_mode=meta.get("container_mode"),
         )
     else:
         raise HTTPException(404, f"Session {session_id} not found")
@@ -281,7 +275,6 @@ async def rename_session(session_id: str, req: RenameRequest) -> SessionInfo:
         duration_seconds=_effective_duration(record),
         error=record.error,
         mode=record.mode,
-        container_mode=record.container_mode,
     )
 
 

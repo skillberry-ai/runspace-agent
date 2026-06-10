@@ -54,13 +54,9 @@ def session_workspace(session_id: str) -> Path:
     return workspaces_root() / session_id
 
 
-def write_session_meta(
-    workspace_root: Path, *, mode: str, container_mode: str | None = None
-) -> None:
+def write_session_meta(workspace_root: Path, *, mode: str) -> None:
     """Persist session metadata (execution mode) at the workspace root."""
     meta: dict[str, str] = {"mode": mode}
-    if container_mode:
-        meta["container_mode"] = container_mode
     try:
         (workspace_root / SESSION_META_FILE).write_text(
             json.dumps(meta), encoding="utf-8"

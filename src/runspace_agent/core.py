@@ -45,8 +45,6 @@ class RunspaceSession(BaseModel):
         container_image: Docker image for container mode.
         container_memory: Memory limit for the container.
         container_cpus: CPU limit for the container.
-        container_mode: ``"ephemeral"`` (new container per run) or
-            ``"persistent"`` (long-running container, docker exec per job).
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -67,7 +65,6 @@ class RunspaceSession(BaseModel):
     container_image: str = "runspace-agent:latest"
     container_memory: str = "4g"
     container_cpus: int = 2
-    container_mode: Literal["ephemeral", "persistent"] = "ephemeral"
     extra_summary_sections: list[SummarySection] | None = None
 
 

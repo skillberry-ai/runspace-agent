@@ -38,7 +38,6 @@ class SessionRecord:
         self.last_accessed = datetime.now(UTC)
         self.workspace_dir = workspace_dir
         self.mode: str | None = None
-        self.container_mode: str | None = None
         self.started_at: float | None = None  # time.monotonic() when run began
         self.duration_seconds: float | None = None
         self.total_tokens: int = 0
@@ -158,9 +157,7 @@ class SessionManager:
                         tz=UTC,
                     )
                     # Recover the execution mode persisted at the workspace root
-                    meta = read_session_meta(entry)
-                    rec.mode = meta.get("mode")
-                    rec.container_mode = meta.get("container_mode")
+                    rec.mode = read_session_meta(entry).get("mode")
                     # Try to recover metadata from conversation.json
                     conv = entry / "conversation.json"
                     if conv.is_file():
