@@ -20,14 +20,14 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+dependencies = [
+    "pydantic>=2.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/skillberry-ai/runspace-agent"
 Source = "https://github.com/skillberry-ai/runspace-agent"
 "Bug Tracker" = "https://github.com/skillberry-ai/runspace-agent/issues"
-dependencies = [
-    "pydantic>=2.0",
-]
 
 [project.scripts]
 runspace-srv = "runspace_agent.cli:main"
