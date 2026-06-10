@@ -143,7 +143,7 @@ def run_server(mode: str = "container") -> None:
     """
     import httpx
 
-    server_url = os.environ.get("RUNSPACE_SERVER_URL", "http://localhost:6767")
+    server_url = f"http://localhost:{os.environ.get('RUNSPACE_PORT', '6767')}"
 
     request_body = {
         "name": "skill-improvement",

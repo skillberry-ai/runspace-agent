@@ -154,11 +154,15 @@ def main() -> None:
             "(container execution by default; --no-docker for local mode)."
         ),
     )
+    env_port = int(os.environ.get("RUNSPACE_PORT", DEFAULT_PORT))
     parser.add_argument(
         "--port",
         type=int,
-        default=DEFAULT_PORT,
-        help=f"Port to listen on (default: {DEFAULT_PORT})",
+        default=env_port,
+        help=(
+            f"Port to listen on (default: {env_port}; "
+            "set via RUNSPACE_PORT or override with --port)"
+        ),
     )
     parser.add_argument(
         "--host",

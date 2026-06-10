@@ -32,7 +32,7 @@ from pathlib import Path
 
 from runspace_agent.agents.claude_code import build_claude_env
 
-BASE = os.environ.get("RUNSPACE_SERVER_URL", "http://localhost:6767")
+BASE = f"http://localhost:{os.environ.get('RUNSPACE_PORT', '6767')}"
 
 
 def build_env() -> dict[str, str]:
