@@ -170,6 +170,9 @@ session = RunspaceSession(
     context_dir=Path("./context"),
     prompt="Improve the code based on the traces in the context directory.",
     agent=agent,
+    # Pull skills into the agent at run setup via `npx skills add`.
+    # Combine with preinstalled_skills / skills_dir — see Skills below.
+    remote_skills=["vercel-labs/agent-skills"],
 )
 
 result = asyncio.run(run_agent(session))
