@@ -225,6 +225,29 @@ In **container mode**, Docker provides true isolation:
 | `mode="container"` + `container_mode="ephemeral"` | Production, full isolation per run |
 | `mode="container"` + `container_mode="persistent"` | Development with containers, faster startup |
 
+#### Container sub-modes: ephemeral vs persistent
+
+When `mode="container"`, `container_mode` controls the container lifecycle:
+
+| | **ephemeral** (default, recommended) | **persistent** |
+|---|---|---|
+| Container | A brand-new container per run, auto-removed (`--rm`) when it exits | One long-lived container (`runspace-persistent-<image>`) reused across runs via `docker exec` |
+| Files | Host workspace bind-mounted into the container — results survive on the host after the container dies | Copied **into** the container; nothing is written to the host |
+| Startup | Slower (creates a container each run) | Faster (just execs into the running one) |
+| Cleanup | Automatic | Never auto-stopped — remove it yourself (`docker rm -f runspace-persistent-<image>`) |
+| Isolation | Fresh sandbox every run | Shared container; state can accumulate between runs |
+| UI / API | Appears in the session list; files browsable/downloadable | Files live inside the container, so the session does **not** appear in the host scan and the file/diff/download endpoints don't apply |
+
+**Use `ephemeral` unless you have a specific reason not to.** It is the default,
+the better-isolated option, and the only container path exercised by the smoke
+test — `persistent` is best treated as an experimental fast-iteration convenience.
+
+In **ephemeral** mode the container is disposable but your data is not: the agent
+writes to a host directory bind-mounted at `/workspace`, so the editable output,
+diffs, and conversation remain on the host after the container is removed (see
+[Sandbox](#sandbox)). Container runs never sync back to your original
+`editable_dir` — changes live in the session workspace and are fetched via the API.
+
 ### Authentication
 
 The agent process needs credentials in its environment to reach the model. There
