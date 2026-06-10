@@ -213,9 +213,12 @@ def install_remote_skills(
             text=True,
         )
         if proc.returncode != 0:
+            # The skills CLI writes its diagnostics to stdout, not stderr, so
+            # include both to surface the real cause (e.g. an invalid agent).
+            details = "\n".join(p for p in (proc.stdout.strip(), proc.stderr.strip()) if p)
             raise RuntimeError(
                 f"Failed to install remote skill source {source!r} "
-                f"(npx skills exited {proc.returncode}).\n{proc.stderr.strip()}"
+                f"(npx skills exited {proc.returncode}).\n{details}"
             )
 
     # Remove the scaffolding the CLI leaves behind so the agent's cwd stays
