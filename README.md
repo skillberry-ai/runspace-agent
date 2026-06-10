@@ -89,8 +89,8 @@ Open in your browser:
 - **http://localhost:6767/redoc** — ReDoc API docs
 
 ```bash
-# Custom port
-runspace-srv --port 9000
+# Custom port (environment-only; default 6767)
+RUNSPACE_PORT=9000 runspace-srv
 
 # Enable auto-reload on code changes (off by default)
 runspace-srv --watch
@@ -98,6 +98,8 @@ runspace-srv --watch
 # Custom session TTL (default: 8 hours)
 runspace-srv --session-ttl 24
 ```
+
+See [Configuration](#configuration) for the environment variables the server reads.
 
 ### Python API
 
@@ -402,16 +404,7 @@ RUNSPACE_DATA_DIR=~/.runspace runspace-srv
 This is handy when you want all managed session data in one known place (e.g. to
 inspect, back up, or persist it across reboots) rather than scattered in temp.
 
-See [`.env.example`](.env.example) for a template covering `RUNSPACE_DATA_DIR`
-(agent credentials are not set here — they are passed per request via
-`agent_settings.env`, see [Agent Credentials](#agent-credentials)). Nothing auto-loads
-it, so copy it to `.env` and export it before starting the server:
-
-```bash
-cp .env.example .env   # then edit it
-set -a; source .env; set +a
-runspace-srv
-```
+See [Configuration](#configuration) for all server environment variables.
 
 ### Manual Start (Advanced)
 
@@ -524,11 +517,6 @@ uv run python examples/skillberry_store_skill/run.py server
 ```
 
 Replace `server` with `library-container` or `library-local` for alternative modes.
-
-## Skillberry Integration
-
-See [docs/skillberry_integration.md](docs/skillberry_integration.md) for how to
-use this library to replace stages 1-3 of the skillberry-skill-maker pipeline.
 
 ## Architecture
 
