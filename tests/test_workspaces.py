@@ -5,7 +5,8 @@ from pathlib import Path
 
 from runspace_agent.workspaces import (
     DATA_DIR_ENV,
-    WORKSPACES_DIRNAME,
+    HOME_DIRNAME,
+    SESSIONS_DIRNAME,
     read_session_meta,
     session_workspace,
     workspaces_root,
@@ -15,13 +16,16 @@ from runspace_agent.workspaces import (
 
 def test_workspaces_root_defaults_to_temp(monkeypatch):
     monkeypatch.delenv(DATA_DIR_ENV, raising=False)
-    assert workspaces_root() == Path(tempfile.gettempdir()) / WORKSPACES_DIRNAME
+    assert workspaces_root() == (
+        Path(tempfile.gettempdir()) / HOME_DIRNAME / SESSIONS_DIRNAME
+    )
 
 
 def test_workspaces_root_honors_env_override(monkeypatch, tmp_path):
     monkeypatch.setenv(DATA_DIR_ENV, str(tmp_path))
-    assert workspaces_root() == tmp_path / WORKSPACES_DIRNAME
-    assert session_workspace("abc123") == tmp_path / WORKSPACES_DIRNAME / "abc123"
+    # The override dir directly contains sessions/ (no extra "runspace" segment).
+    assert workspaces_root() == tmp_path / SESSIONS_DIRNAME
+    assert session_workspace("abc123") == tmp_path / SESSIONS_DIRNAME / "abc123"
 
 
 def test_session_workspace_is_under_root(monkeypatch, tmp_path):

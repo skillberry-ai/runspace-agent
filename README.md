@@ -144,7 +144,7 @@ runtime before starting `runspace-srv`.
 | Variable | Default | Description |
 | --- | --- | --- |
 | `RUNSPACE_PORT` | `6767` | Port the server listens on. |
-| `RUNSPACE_DATA_DIR` | system temp dir | Parent of the `runspace/` workspace folder where every session's managed data lives. Set it to keep session data in a stable, inspectable location. See [Session Storage](#session-storage). |
+| `RUNSPACE_DATA_DIR` | `{system-temp}/runspace` | The runspace home directory; it contains the `sessions/` folder where every session's managed data lives. Set it to keep session data in a stable, inspectable location. See [Session Storage](#session-storage). |
 
 Agent credentials (e.g. `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`) are **not**
 server config — they are passed per request via `agent_settings.env` on
@@ -413,18 +413,27 @@ curl -X POST http://localhost:6767/run \
 
 ### Session Storage
 
-Every session workspace lives under a single parent folder, `{base}/runspace/`,
-with one subdirectory per session (its editable copy, pre-run snapshot, context,
-conversation, and metadata). These directories are what the UI scans and what the
-file/diff/download endpoints read.
+Everything lives under a **runspace home** directory, with one subdirectory per
+session under `sessions/` (each holding its editable copy, pre-run snapshot,
+context, conversation, and metadata). The `sessions/` folder is what the UI scans
+and what the file/diff/download endpoints read.
 
-By default `{base}` is the system temp directory. Set the optional
-**`RUNSPACE_DATA_DIR`** environment variable to relocate the `runspace/` folder
-to a stable, discoverable location instead:
+```
+<home>/
+└── sessions/
+    └── <session_id>/
+        ├── agent_workspace/   (editable/ + context/ + skills)
+        ├── editable_original/  (pre-run snapshot, for diffs)
+        └── ...
+```
+
+By default the home is `{system-temp}/runspace` (so the shared temp dir stays
+namespaced). Set the optional **`RUNSPACE_DATA_DIR`** environment variable to make
+that directory the home directly — it will then contain `sessions/`:
 
 ```bash
-RUNSPACE_DATA_DIR=~/.runspace runspace-srv
-# -> workspaces live under ~/.runspace/runspace/<session_id>/
+runspace-srv                              # -> {tmp}/runspace/sessions/<id>/
+RUNSPACE_DATA_DIR=~/.runspace runspace-srv  # -> ~/.runspace/sessions/<id>/
 ```
 
 This is handy when you want all managed session data in one known place (e.g. to

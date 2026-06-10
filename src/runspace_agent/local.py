@@ -30,7 +30,7 @@ async def run_local(
 
     The workspace layout is::
 
-        {temp}/runspace/{session_id}/
+        {home}/sessions/{session_id}/
             editable/          <- copy of session.editable_dir (agent modifies this)
             editable_original/ <- snapshot before agent runs (for diff)
             context/           <- copy of session.context_dir

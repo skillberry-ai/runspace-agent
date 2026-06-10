@@ -1,21 +1,22 @@
 """Host-side locations for session workspaces.
 
-All session workspaces live under a single parent directory::
+Everything lives under a single **runspace home** directory, with session
+workspaces grouped under a ``sessions/`` subfolder::
 
-    {base}/runspace/
-        {session_id}/
-            agent_workspace/   <- editable/ + context/ + skills
-            editable_original/ <- pre-run snapshot (for diff)
-            ...
+    {home}/
+        sessions/
+            {session_id}/
+                agent_workspace/   <- editable/ + context/ + skills
+                editable_original/ <- pre-run snapshot (for diff)
+                ...
 
-By default ``{base}`` is the system temp directory. Set the ``RUNSPACE_DATA_DIR``
-environment variable to put the ``runspace/`` folder somewhere stable and
-discoverable instead (e.g. ``~/.runspace`` or ``/var/lib/runspace``) so every
-session's managed data is easy to find.
+The home is the ``RUNSPACE_DATA_DIR`` environment variable when set — so that
+directory directly contains ``sessions/`` (and leaves room for other runspace
+data later). When unset, the home defaults to ``{system-temp}/runspace`` so the
+shared temp dir stays namespaced and tidy.
 
-Keeping every session under one ``runspace/`` folder (rather than scattering
-``runspace_<id>`` folders directly in the base) keeps things tidy and makes the
-orphan scan a single ``iterdir`` of one directory.
+Grouping sessions under one ``sessions/`` folder makes the orphan scan a single
+``iterdir`` of one directory.
 """
 
 from __future__ import annotations
@@ -25,18 +26,15 @@ import os
 import tempfile
 from pathlib import Path
 
-WORKSPACES_DIRNAME = "runspace"
+# Default home namespace inside the system temp dir (used when RUNSPACE_DATA_DIR
+# is not set), and the subfolder that holds per-session workspaces.
+HOME_DIRNAME = "runspace"
+SESSIONS_DIRNAME = "sessions"
 
-# Optional override for the parent of the ``runspace/`` folder. When set, it
-# replaces the system temp dir as the base, letting users point all managed
-# session data at a known, persistent location.
+# Optional override for the runspace home. When set, this directory directly
+# contains ``sessions/``, letting users point all managed data at a known,
+# persistent location (e.g. ``~/.runspace`` or ``/var/lib/runspace``).
 DATA_DIR_ENV = "RUNSPACE_DATA_DIR"
-
-
-def _base_dir() -> Path:
-    """Return the parent directory of the ``runspace/`` folder."""
-    override = os.environ.get(DATA_DIR_ENV)
-    return Path(override) if override else Path(tempfile.gettempdir())
 
 # Session-level metadata file written at the workspace root. It records how the
 # session ran (e.g. its execution mode) so the orphan scan can recover that info
@@ -44,9 +42,17 @@ def _base_dir() -> Path:
 SESSION_META_FILE = "session_meta.json"
 
 
+def runspace_home() -> Path:
+    """Return the runspace home directory (holds ``sessions/`` and friends)."""
+    override = os.environ.get(DATA_DIR_ENV)
+    if override:
+        return Path(override)
+    return Path(tempfile.gettempdir()) / HOME_DIRNAME
+
+
 def workspaces_root() -> Path:
     """Return the parent directory that holds every session workspace."""
-    return _base_dir() / WORKSPACES_DIRNAME
+    return runspace_home() / SESSIONS_DIRNAME
 
 
 def session_workspace(session_id: str) -> Path:
