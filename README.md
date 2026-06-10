@@ -25,15 +25,16 @@ workspace.
 
 ### From PyPI
 
-Install by name and pick the extras you need — a plain install pulls in the core
-library only (no agent, server, or container support):
+Install by name and pick the extras you need. Container mode is **optional** — it
+needs the `[container]` extra (plus Docker); without it, agents run in **local**
+mode only.
 
 ```bash
-python -m pip install "runspace-agent[all]"          # everything (recommended): server + UI, Claude agent, containers
-python -m pip install "runspace-agent[server]"       # just the server + Web UI
-python -m pip install "runspace-agent[claude]"       # just the Claude Code agent
-python -m pip install "runspace-agent[container]"    # just Docker container execution
-python -m pip install runspace-agent                 # core library only
+python -m pip install "runspace-agent[all]"          # everything (recommended): server + UI, Claude agent, local + container modes
+python -m pip install "runspace-agent[server]"       # HTTP server + Web UI (local mode; add [container] for container mode)
+python -m pip install "runspace-agent[claude]"       # the built-in Claude Code agent
+python -m pip install "runspace-agent[container]"    # container execution mode (optional; local mode needs no Docker)
+python -m pip install runspace-agent                 # core library only — run your own agent locally; no server, no container
 ```
 
 Mix extras as needed, e.g. `python -m pip install "runspace-agent[server,claude,container]"`.
