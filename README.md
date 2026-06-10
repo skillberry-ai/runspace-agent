@@ -286,28 +286,43 @@ diffs, and conversation remain on the host after the container is removed (see
 [Sandbox](#sandbox)). Container runs never sync back to your original
 `editable_dir` — changes live in the session workspace and are fetched via the API.
 
-### Authentication
+### Agent Credentials
 
-The agent process needs credentials in its environment to reach the model. There
-is **no single required variable** — pass whatever `claude-code-sdk` needs to
-authenticate: an Anthropic API key, or a base URL + auth token for a proxy/gateway
-(what the [`examples/`](examples/) use via their `build_env()` helper).
+Credentials are **agent-specific** — there is no global API-key setting in the
+runspace layer. Each `FilesystemAgent` decides what it needs to reach its model and
+exposes it through its own configuration, which you supply per session via
+`agent_settings` (HTTP API) or the agent's options object (Python API). Whatever you
+provide is what the agent process receives in its environment.
 
-- **Python API:** set them in `ClaudeCodeOptions(env={...})` (see [Python API](#python-api) above).
-- **HTTP API:** set them in the request body's `agent_settings.env`:
+**Claude Code agent (built-in).** Authenticate by setting credentials in the agent's
+`env`: either an Anthropic API key, or a base URL + auth token for a proxy/gateway.
+
+- **HTTP API** — `agent_settings.env` on `POST /run`:
 
 ```jsonc
 {
   "editable_dir": "...", "context_dir": "...", "prompt": "...",
   "agent_settings": {
     "env": {
-      "ANTHROPIC_BASE_URL": "https://your-gateway.example.com",
-      "ANTHROPIC_AUTH_TOKEN": "...",
-      "ANTHROPIC_MODEL": "claude-opus-4-8"
+      "ANTHROPIC_API_KEY": "sk-ant-..."
+      // — or, for a proxy/gateway —
+      // "ANTHROPIC_BASE_URL": "https://your-gateway.example.com",
+      // "ANTHROPIC_AUTH_TOKEN": "...",
+      // "ANTHROPIC_MODEL": "claude-opus-4-8"
     }
   }
 }
 ```
+
+- **Python API** — `ClaudeCodeOptions(env={...})` (see [Python API](#python-api) above).
+- The examples and manual tests build this dict from your shell environment with the
+  `build_claude_env()` helper in `runspace_agent.agents.claude_code` (reads
+  `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_BASE_URL` / `ANTHROPIC_MODEL`).
+
+**Other agents.** A different agent type authenticates however *it* requires — its own
+API-key variable, a token file, a config field, etc. Expose those through the same
+`agent_settings` (the agent reads them when it builds its options); nothing in the
+runspace layer is Anthropic-specific.
 
 > **Container vs local:** a local-mode run may inherit auth from the host
 > environment, but a container is a clean room — it only receives what you put in
@@ -389,7 +404,7 @@ inspect, back up, or persist it across reboots) rather than scattered in temp.
 
 See [`.env.example`](.env.example) for a template covering `RUNSPACE_DATA_DIR`
 (agent credentials are not set here — they are passed per request via
-`agent_settings.env`, see [Authentication](#authentication)). Nothing auto-loads
+`agent_settings.env`, see [Agent Credentials](#agent-credentials)). Nothing auto-loads
 it, so copy it to `.env` and export it before starting the server:
 
 ```bash
