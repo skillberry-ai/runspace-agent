@@ -217,6 +217,21 @@ In **container mode**, Docker provides true isolation:
 - Memory and CPU limits
 - Per-session workspace directories
 
+> **Running the server on your own machine? Prefer container mode.** It gives the
+> agent a hard isolation boundary: it runs *inside* the container and the only
+> part of your computer it can touch is the single session workspace directory,
+> which is bind-mounted into the container. Nothing else on your PC is visible or
+> changeable. Container mode also **does not** write back to your original
+> `editable_dir` — it works on a copy in the workspace, so your source files stay
+> untouched.
+>
+> **local mode**, by contrast, runs the agent as a process directly on your host.
+> The PreToolUse hooks keep it inside the session directory, but it shares your
+> machine and user, and on success it **syncs results back to your original
+> `editable_dir`** — i.e. it does change files on your PC. Use local mode for
+> trusted, fast iteration; use container mode when you want your machine
+> protected from whatever the agent does.
+
 ### Execution Modes
 
 | Mode | When to use |
