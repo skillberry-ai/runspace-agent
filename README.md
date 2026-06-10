@@ -388,8 +388,9 @@ This is handy when you want all managed session data in one known place (e.g. to
 inspect, back up, or persist it across reboots) rather than scattered in temp.
 
 See [`.env.example`](.env.example) for a template covering `RUNSPACE_DATA_DIR`
-and the agent credential variables. Nothing auto-loads it, so copy it to `.env`
-and export it before starting the server:
+(agent credentials are not set here — they are passed per request via
+`agent_settings.env`, see [Authentication](#authentication)). Nothing auto-loads
+it, so copy it to `.env` and export it before starting the server:
 
 ```bash
 cp .env.example .env   # then edit it
