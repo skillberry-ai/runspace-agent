@@ -475,15 +475,25 @@ There are two ways to work with the UI:
 
 ## Docker
 
-The `runspace-agent:latest` image (required for container mode) is built
-automatically the first time you start the server, since the Docker pre-flight
-runs by default:
+The `runspace-agent:latest` image (required for container mode) is managed for you
+by the Docker pre-flight that runs at startup by default — you never have to build
+it by hand:
 
 ```bash
-runspace-srv              # builds the image if missing, then serves
-runspace-srv --rebuild    # force a rebuild, then serves
+runspace-srv              # builds the image only if missing, then serves
+runspace-srv --rebuild    # force a rebuild even if it exists, then serves
 runspace-srv --no-docker  # skip Docker entirely; run sessions locally
 ```
+
+- **`runspace-srv`** — checks whether `runspace-agent:latest` exists and **builds it
+  only if it's missing**. If the image is already present it's reused as-is (no
+  rebuild), so startup is fast on subsequent runs.
+- **`runspace-srv --rebuild`** — **forces a rebuild** of the image even when it already
+  exists. Use this after upgrading runspace-agent or changing the Dockerfile.
+- **`runspace-srv --no-docker`** — **skips Docker entirely**: no daemon check, no image
+  build, and sessions default to local execution on the host. A request that still
+  asks for `mode: "container"` will fail — see
+  [Choosing the mode per request](#choosing-the-mode-per-request).
 
 The build context is assembled from the installed package, so this works the same
 whether runspace-agent was installed editable, from git, or from a wheel — no repo
