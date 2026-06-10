@@ -189,22 +189,32 @@ bundled preinstalled skills. The `ClaudeCodeAgent` ships with:
 - **skill-creator** — Create, modify, improve, and evaluate skills
 - **mcp-builder** — Build MCP servers in Python (FastMCP) or Node/TypeScript
 
-By default all preinstalled skills are included. Control which ones via `preinstalled_skills`:
+Preinstalled skills are **opt-in** — none are included unless you select them
+by name via `preinstalled_skills`:
 ```python
-# Include all preinstalled skills (default)
-session = RunspaceSession(..., preinstalled_skills=None)
+# No preinstalled skills (default)
+session = RunspaceSession(...)
 
-# Include only specific ones
+# Include only the ones you select
 session = RunspaceSession(..., preinstalled_skills=["mcp-builder"])
-
-# Skip all preinstalled skills
-session = RunspaceSession(..., preinstalled_skills=[])
 ```
 
-Provide your own with `skills_dir=Path(...)` — custom skills override preinstalled
-ones with the same name.
+To add your own skills, point `skills_dir` at a directory that contains one
+subdirectory per skill (each with its own `SKILL.md`):
+```
+my-skills/
+├── my-skill/
+│   └── SKILL.md
+└── another-skill/
+    └── SKILL.md
+```
+```python
+session = RunspaceSession(..., skills_dir=Path("my-skills"))
+```
+Custom skills override preinstalled ones with the same name. You can combine
+both — select a preinstalled skill *and* supply your own directory.
 
-Use `GET /skills` to list all preinstalled skills via the API.
+Use `GET /skills` to list the available preinstalled skills via the API.
 
 ### Sandbox
 

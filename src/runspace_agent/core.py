@@ -37,8 +37,9 @@ class RunspaceSession(BaseModel):
             passed to the default agent when ``agent`` is ``None``.
         skills_dir: Optional directory of custom skills to load into the workspace.
         preinstalled_skills: Which preinstalled skills to include.
-            ``None`` (default) includes all.  An explicit list filters
-            by name (e.g. ``["mcp-builder"]``).  ``[]`` skips all.
+            Opt-in: ``None`` (default) or ``[]`` includes none.  Pass an
+            explicit list of names to include only those
+            (e.g. ``["mcp-builder"]``).
         mode: Execution mode — ``"local"`` or ``"container"``.
         output_zip: Whether to zip the editable directory after the agent runs.
         container_image: Docker image for container mode.

@@ -91,9 +91,9 @@ def prepare_skills(
         folder_name: Agent-specific skills folder name relative to
             *workspace_root* (e.g. ``".claude/skills"``).
         preinstalled_skills: Which preinstalled skills to include.
-            ``None`` includes all available defaults.  An explicit list
-            filters by name (e.g. ``["mcp-builder"]``).  An empty list
-            skips all defaults.
+            Preinstalled skills are **opt-in**: ``None`` (default) or an
+            empty list includes none.  Pass an explicit list of names to
+            include only those (e.g. ``["mcp-builder"]``).
 
     Returns:
         The created skills directory path, or ``None`` if no skills
@@ -102,8 +102,9 @@ def prepare_skills(
     if not skills_dir and not default_skills_dir:
         return None
 
-    # Empty list explicitly means "no preinstalled skills"
-    if preinstalled_skills is not None and len(preinstalled_skills) == 0:
+    # Preinstalled skills are opt-in: only included when explicitly named.
+    # None (default) or an empty list means "no preinstalled skills".
+    if not preinstalled_skills:
         default_skills_dir = None
 
     if not skills_dir and not default_skills_dir:
@@ -112,10 +113,10 @@ def prepare_skills(
     target = workspace_root / folder_name
     target.mkdir(parents=True, exist_ok=True)
 
-    # Copy default/preinstalled skills first
+    # Copy the selected preinstalled skills first
     if default_skills_dir:
         for skill in get_default_skills(default_skills_dir):
-            if preinstalled_skills is not None and skill.name not in preinstalled_skills:
+            if not preinstalled_skills or skill.name not in preinstalled_skills:
                 continue
             dest = target / skill.name
             if not dest.exists():
