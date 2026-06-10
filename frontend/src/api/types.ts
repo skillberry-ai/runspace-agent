@@ -11,7 +11,6 @@ export interface SessionInfo {
   duration_seconds?: number | null;
   error?: string | null;
   mode?: string | null;
-  container_mode?: string | null;
 }
 
 export interface SessionDetail extends SessionInfo {

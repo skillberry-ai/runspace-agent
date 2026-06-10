@@ -125,16 +125,7 @@ export default function SessionDetail() {
           <StatusBadge status={session.status} />
         </MetaCard>
         <MetaCard label="Agent" value={session.agent_type || '-'} />
-        <MetaCard
-          label="Mode"
-          value={
-            session.mode
-              ? session.mode === 'container' && session.container_mode
-                ? `container · ${session.container_mode}`
-                : session.mode
-              : '-'
-          }
-        />
+        <MetaCard label="Mode" value={session.mode || '-'} />
         <MetaCard label="Duration" value={formatDuration(session.duration_seconds ?? (session.duration_ms / 1000))} />
         <MetaCard label="Tokens" value={formatTokens(session.total_tokens)} />
         <MetaCard label="Cost" value={formatCost(session.total_cost_usd)} />
