@@ -63,6 +63,10 @@ class SessionInfo(BaseModel):
     workspace_dir: str | None = None
     duration_seconds: float | None = None
     error: str | None = None
+    # Execution mode this session ran in ("local" or "container"), plus the
+    # container sub-mode ("ephemeral"/"persistent") when mode == "container".
+    mode: str | None = None
+    container_mode: str | None = None
 
 
 class SessionDetail(SessionInfo):

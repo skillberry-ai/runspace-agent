@@ -13,7 +13,11 @@ from pathlib import Path
 from typing import Any
 
 from runspace_agent.server.models import SessionStatus
-from runspace_agent.workspaces import session_workspace, workspaces_root
+from runspace_agent.workspaces import (
+    read_session_meta,
+    session_workspace,
+    workspaces_root,
+)
 
 
 class SessionRecord:
@@ -33,6 +37,8 @@ class SessionRecord:
         self.created_at = datetime.now(UTC)
         self.last_accessed = datetime.now(UTC)
         self.workspace_dir = workspace_dir
+        self.mode: str | None = None
+        self.container_mode: str | None = None
         self.started_at: float | None = None  # time.monotonic() when run began
         self.duration_seconds: float | None = None
         self.total_tokens: int = 0
@@ -151,6 +157,10 @@ class SessionManager:
                         entry.stat().st_mtime,
                         tz=UTC,
                     )
+                    # Recover the execution mode persisted at the workspace root
+                    meta = read_session_meta(entry)
+                    rec.mode = meta.get("mode")
+                    rec.container_mode = meta.get("container_mode")
                     # Try to recover metadata from conversation.json
                     conv = entry / "conversation.json"
                     if conv.is_file():

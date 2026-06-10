@@ -40,7 +40,7 @@ from runspace_agent.server.models import (
     SkillInfo,
 )
 from runspace_agent.server.session_manager import SessionManager
-from runspace_agent.workspaces import session_workspace
+from runspace_agent.workspaces import read_session_meta, session_workspace
 
 app = FastAPI(title="Runspace Agent", version="0.1.0")
 app.add_middleware(
@@ -114,6 +114,8 @@ async def create_run(req: RunRequest) -> SessionInfo:
     # Generate a stable session ID upfront so the UI only ever sees one entry.
     preliminary_id = uuid.uuid4().hex[:12]
     record = manager.register(preliminary_id, name=req.name, agent_type=req.agent_type)
+    record.mode = mode
+    record.container_mode = req.container_mode if mode == "container" else None
 
     # Set workspace_dir eagerly so the orphan scanner skips this directory
     # while the agent is still running.
@@ -151,6 +153,8 @@ async def create_run(req: RunRequest) -> SessionInfo:
         status=record.status,
         created_at=record.created_at.isoformat(),
         last_accessed=record.last_accessed.isoformat(),
+        mode=record.mode,
+        container_mode=record.container_mode,
     )
 
 
@@ -184,6 +188,8 @@ async def list_sessions(status: SessionStatus | None = None) -> list[SessionInfo
             workspace_dir=str(r.workspace_dir) if r.workspace_dir else None,
             duration_seconds=_effective_duration(r),
             error=r.error,
+            mode=getattr(r, "mode", None),
+            container_mode=getattr(r, "container_mode", None),
         )
         for r in records
     ]
@@ -213,6 +219,8 @@ async def get_session(session_id: str) -> SessionDetail:
             workspace_dir=str(record.workspace_dir) if record.workspace_dir else None,
             duration_seconds=_effective_duration(record),
             error=record.error,
+            mode=record.mode,
+            container_mode=record.container_mode,
             total_tokens=record.total_tokens,
             total_cost_usd=record.total_cost_usd,
             duration_ms=record.duration_ms,
@@ -224,6 +232,7 @@ async def get_session(session_id: str) -> SessionDetail:
 
         st = workspace.stat()
         elapsed = st.st_mtime - st.st_ctime
+        meta = read_session_meta(workspace)
         detail = SessionDetail(
             session_id=session_id,
             status=SessionStatus.COMPLETED,
@@ -231,6 +240,8 @@ async def get_session(session_id: str) -> SessionDetail:
             last_accessed=datetime.fromtimestamp(st.st_mtime).isoformat(),
             workspace_dir=str(workspace),
             duration_seconds=round(elapsed, 2) if elapsed > 0 else None,
+            mode=meta.get("mode"),
+            container_mode=meta.get("container_mode"),
         )
     else:
         raise HTTPException(404, f"Session {session_id} not found")
@@ -269,6 +280,8 @@ async def rename_session(session_id: str, req: RenameRequest) -> SessionInfo:
         workspace_dir=str(record.workspace_dir) if record.workspace_dir else None,
         duration_seconds=_effective_duration(record),
         error=record.error,
+        mode=record.mode,
+        container_mode=record.container_mode,
     )
 
 

@@ -15,7 +15,7 @@ from runspace_agent.agents.base import AgentResult, FilesystemAgent, Workspace
 from runspace_agent.prompt import build_prompt
 from runspace_agent.sandbox import build_hooks_config
 from runspace_agent.skills import prepare_skills
-from runspace_agent.workspaces import session_workspace
+from runspace_agent.workspaces import session_workspace, write_session_meta
 
 if TYPE_CHECKING:
     from runspace_agent.core import RunspaceSession
@@ -46,6 +46,7 @@ async def run_local(
     # so it cannot touch session-level files like editable_original/.
     workspace_root = session_workspace(session_id)
     workspace_root.mkdir(parents=True, exist_ok=True)
+    write_session_meta(workspace_root, mode="local")
 
     agent_workspace = workspace_root / "agent_workspace"
     agent_workspace.mkdir(parents=True, exist_ok=True)
