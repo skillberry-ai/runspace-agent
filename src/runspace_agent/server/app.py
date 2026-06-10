@@ -102,6 +102,7 @@ async def create_run(req: RunRequest) -> SessionInfo:
         agent_options=agent_options,
         skills_dir=Path(req.skills_dir) if req.skills_dir else None,
         preinstalled_skills=req.preinstalled_skills,
+        remote_skills=req.remote_skills,
         mode=mode,  # type: ignore[arg-type]
         output_zip=req.output_zip,
         container_image=req.container_image,

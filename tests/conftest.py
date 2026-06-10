@@ -14,6 +14,7 @@ class MockFilesystemAgent:
 
     skills_folder_name: str = ".mock/skills"
     default_skills_dir: Path | None = None
+    npx_agent_name: str | None = None
 
     async def run(self, workspace: Workspace) -> AgentResult:
         marker = workspace.editable_dir / "agent_was_here.txt"
@@ -26,6 +27,7 @@ class FailingAgent:
 
     skills_folder_name: str = ".mock/skills"
     default_skills_dir: Path | None = None
+    npx_agent_name: str | None = None
 
     async def run(self, workspace: Workspace) -> AgentResult:
         return AgentResult(success=False, error="intentional failure")

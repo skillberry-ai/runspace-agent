@@ -74,6 +74,11 @@ class FilesystemAgent(Protocol):
             agent's bundled/preinstalled skills on disk.  Each subdirectory
             is a separate skill.  ``None`` means the agent ships no default
             skills.
+        npx_agent_name: The agent identifier the ``skills`` CLI expects after
+            its ``-a`` flag (e.g. ``"claude"`` for Claude Code), used to
+            install per-run ``remote_skills`` via ``npx skills add``.  ``None``
+            means the agent has no skills-CLI mapping, so ``remote_skills`` is
+            unsupported for it.
 
     Adding a new agent type
     -----------------------
@@ -84,6 +89,7 @@ class FilesystemAgent(Protocol):
            class MyAgent:
                skills_folder_name: str = ".<name>/skills"
                default_skills_dir: Path | None = ...
+               npx_agent_name: str | None = ...  # "-a" value for `npx skills`, or None
 
                def __init__(self, *, options: MyAgentOptions | None = None): ...
                async def run(self, workspace: Workspace) -> AgentResult: ...
@@ -121,6 +127,7 @@ class FilesystemAgent(Protocol):
 
     skills_folder_name: str
     default_skills_dir: Path | None
+    npx_agent_name: str | None
 
     async def run(self, workspace: Workspace) -> AgentResult:
         """Execute the agent inside the given workspace.

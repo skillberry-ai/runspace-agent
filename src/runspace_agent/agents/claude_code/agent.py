@@ -50,6 +50,9 @@ class ClaudeCodeAgent:
 
     skills_folder_name: str = ".claude/skills"
 
+    # The "-a" value for `npx skills add`, used to install per-run remote_skills.
+    npx_agent_name: str = "claude"
+
     # Repo-root-relative path to bundled skills.  Computed once at module load.
     _DEFAULT_SKILLS_DIR: Path = (
         Path(__file__).resolve().parent.parent.parent.parent.parent / ".claude" / "skills"

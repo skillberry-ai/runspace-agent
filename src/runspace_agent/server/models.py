@@ -28,6 +28,9 @@ class RunRequest(BaseModel):
     context_description: str = ""
     skills_dir: str | None = None
     preinstalled_skills: list[str] | None = None
+    # Remote skill sources installed at run setup via `npx skills add`
+    # (e.g. "vercel-labs/agent-skills", GitHub URLs, repo subpaths).
+    remote_skills: list[str] | None = None
     # None means "use the server's default mode" (set by the runspace-srv CLI:
     # container unless started with --no-docker).
     mode: str | None = None

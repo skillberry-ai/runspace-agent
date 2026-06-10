@@ -20,6 +20,7 @@ from pathlib import Path
 
 from runspace_agent.agents import Workspace, build_agent_options, create_agent
 from runspace_agent.sandbox import build_hooks_config
+from runspace_agent.skills import install_remote_skills
 
 
 def main() -> None:
@@ -51,6 +52,14 @@ def main() -> None:
 
     options = build_agent_options(agent_type=agent_type, agent_settings=settings)
     agent = create_agent(agent_type=agent_type, options=options)
+
+    # Install any remote skills via `npx skills add` inside the container
+    install_remote_skills(
+        remote_skills=config.get("remote_skills"),
+        agent_workspace=cwd,
+        npx_agent_name=config.get("npx_agent_name") or agent.npx_agent_name,
+        folder_name=agent.skills_folder_name,
+    )
 
     workspace = Workspace(
         editable_dir=editable_dir,
