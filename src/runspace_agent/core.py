@@ -59,6 +59,7 @@ class RunspaceSession(BaseModel):
     agent_options: Any = None  # Agent-specific options (e.g. ClaudeCodeOptions)
     skills_dir: Path | None = None
     preinstalled_skills: list[str] | None = None
+    remote_skills: list[str] | None = None
     mode: Literal["local", "container"] = "local"
     output_zip: bool = False
     # Container settings

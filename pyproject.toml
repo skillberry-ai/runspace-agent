@@ -1,6 +1,6 @@
 [project]
 name = "runspace-agent"
-version = "0.2.0"
+version = "0.3.0"
 description = "Sandboxed execution environment for AI agents operating on filesystem directories"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -158,6 +158,10 @@ def _run_container_blocking(
         "cwd": "/workspace/agent_workspace",
         "editable_dir": "/workspace/agent_workspace/editable",
         "context_dir": "/workspace/agent_workspace/context",
+        # Remote skills are installed inside the container (its own npx),
+        # never on the host.
+        "remote_skills": session.remote_skills,
+        "npx_agent_name": agent.npx_agent_name,
     }
 
     # Include agent options in the config for the in-container entrypoint

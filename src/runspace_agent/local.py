@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from runspace_agent.agents.base import AgentResult, FilesystemAgent, Workspace
 from runspace_agent.prompt import build_prompt
 from runspace_agent.sandbox import build_hooks_config
-from runspace_agent.skills import prepare_skills
+from runspace_agent.skills import install_remote_skills, prepare_skills
 from runspace_agent.workspaces import session_workspace, write_session_meta
 
 if TYPE_CHECKING:
@@ -70,6 +70,15 @@ async def run_local(
         folder_name=agent.skills_folder_name,
         preinstalled_skills=session.preinstalled_skills,
     )
+
+    # Install any remote skills via `npx skills add` on the host
+    remote_skills_dir = install_remote_skills(
+        remote_skills=session.remote_skills,
+        agent_workspace=agent_workspace,
+        npx_agent_name=agent.npx_agent_name,
+        folder_name=agent.skills_folder_name,
+    )
+    skills_dir = skills_dir or remote_skills_dir
 
     # Build sandbox hooks to restrict agent to its workspace only
     hooks = build_hooks_config(agent_workspace)

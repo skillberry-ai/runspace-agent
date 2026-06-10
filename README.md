@@ -212,6 +212,7 @@ from runspace_agent.agents.base import FilesystemAgent, Workspace, AgentResult
 class MyCustomAgent:
     skills_folder_name = ".my_agent/skills"
     default_skills_dir = Path("./my_bundled_skills")  # or None
+    npx_agent_name = "my-agent"  # "-a" value for `npx skills`, or None
 
     async def run(self, workspace: Workspace) -> AgentResult:
         # Read from workspace.context_dir
@@ -251,7 +252,7 @@ Skills are agent-specific tool extensions. Each `FilesystemAgent` declares a
 `skills_folder_name` (e.g. `.claude/skills` for Claude Code) and the library
 copies skills into the workspace.
 
-There are **two ways** to give an agent skills, and you can use either or both:
+There are **three ways** to give an agent skills, and you can use any or all:
 
 #### 1. Preinstalled skills (`preinstalled_skills`)
 
@@ -295,6 +296,43 @@ session = RunspaceSession(
 ```
 
 Use `GET /skills` to list the available preinstalled skills via the API.
+
+#### 3. Remote skills (`remote_skills`)
+
+Pull skills straight from a repo at run setup using the
+[`skills` CLI](https://skills.sh) (`npx skills add`). `remote_skills` is a list
+of **sources** — anything `npx skills add` accepts: an `owner/repo` slug, a
+GitHub URL, or a repo subpath:
+```python
+session = RunspaceSession(
+    ...,
+    remote_skills=[
+        "vercel-labs/agent-skills",
+        "https://github.com/owner/repo",
+        "owner/repo/path/to/skill",
+    ],
+)
+```
+Or via the `/run` API:
+```json
+{ "remote_skills": ["vercel-labs/agent-skills"] }
+```
+
+Each source is installed into the agent's skills folder scoped to the agent's
+`npx_agent_name` (`claude` for Claude Code), i.e. roughly:
+```
+npx skills add <source> -a claude -s '*' -y --copy
+```
+
+Notes:
+- **All** skills from each source are installed.
+- Requires Node.js / `npx` in the run environment. The container image already
+  ships Node, so container mode works out of the box; **local mode** needs
+  `npx` on the host (it's installed inside the container, never run on the host
+  for container runs).
+- A source that fails to install **fails the run** — remote skills you asked
+  for are treated as required setup, not best-effort.
+- Combine freely with `preinstalled_skills` and `skills_dir`.
 
 ### Sandbox
 
