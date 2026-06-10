@@ -42,6 +42,10 @@ Mix extras as needed, e.g. `pip install "runspace-agent[server,claude,container]
 
 ### From source (development)
 
+Only needed if you're **working on runspace-agent itself** (from a clone of this
+repo). Normal users should install from PyPI as shown above. The `-e` flag does an
+**editable** install so your code changes take effect without reinstalling.
+
 ```bash
 # Create venv with Python 3.11
 uv venv --python 3.11
