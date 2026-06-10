@@ -23,6 +23,25 @@ workspace.
 
 ## Install
 
+### From PyPI
+
+Install by name and pick the extras you need — a plain install pulls in the core
+library only (no agent, server, or container support):
+
+```bash
+pip install "runspace-agent[all]"          # everything (recommended): server + UI, Claude agent, containers
+pip install "runspace-agent[server]"       # just the server + Web UI
+pip install "runspace-agent[claude]"       # just the Claude Code agent
+pip install "runspace-agent[container]"    # just Docker container execution
+pip install runspace-agent                 # core library only
+```
+
+Mix extras as needed, e.g. `pip install "runspace-agent[server,claude,container]"`.
+(Quote the brackets — some shells treat `[]` as a glob.) After installing with
+`[server]` (or `[all]`), start it with `runspace-srv` — see [Quick Start](#quick-start).
+
+### From source (development)
+
 ```bash
 # Create venv with Python 3.11
 uv venv --python 3.11
@@ -67,7 +86,7 @@ uv pip install -e ".[dev]"
 The fastest way to get started is with the built-in server:
 
 ```bash
-uv pip install -e ".[all]"
+pip install "runspace-agent[all]"
 runspace-srv
 ```
 
