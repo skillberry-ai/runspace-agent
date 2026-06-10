@@ -17,6 +17,15 @@ jobs:
       - name: Install build
         run: pip install build
 
+      # The published version comes from the release tag (e.g. v0.2.0 -> 0.2.0),
+      # not the static version in pyproject.toml — that's why earlier tags all
+      # published as 0.1.0. Overwrite it here so the build matches the tag.
+      - name: Set version from release tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Publishing version: $VERSION"
+          sed -i -E "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+
       - name: Build distribution
         run: python -m build
 
