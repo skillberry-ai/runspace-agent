@@ -135,6 +135,30 @@ result = asyncio.run(run_agent(session))
 print(f"Success: {result.success}, Session: {result.session_id}")
 ```
 
+## Configuration
+
+The server is configured through environment variables — nothing is read from a
+`.env` file automatically. Set them in your shell, process manager, or container
+runtime before starting `runspace-srv`.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `RUNSPACE_PORT` | `6767` | Port the server listens on. |
+| `RUNSPACE_DATA_DIR` | system temp dir | Parent of the `runspace/` workspace folder where every session's managed data lives. Set it to keep session data in a stable, inspectable location. See [Session Storage](#session-storage). |
+
+Agent credentials (e.g. `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`) are **not**
+server config — they are passed per request via `agent_settings.env` on
+`POST /run` (or `ClaudeCodeOptions.env` for the library). See
+[Agent Credentials](#agent-credentials).
+
+If you prefer to keep these in a file, you can export it yourself before starting
+the server:
+
+```bash
+set -a; source my-env-file; set +a
+runspace-srv
+```
+
 ## Concepts
 
 ### FilesystemAgent Protocol

@@ -154,16 +154,6 @@ def main() -> None:
             "(container execution by default; --no-docker for local mode)."
         ),
     )
-    env_port = int(os.environ.get("RUNSPACE_PORT", DEFAULT_PORT))
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=env_port,
-        help=(
-            f"Port to listen on (default: {env_port}; "
-            "set via RUNSPACE_PORT or override with --port)"
-        ),
-    )
     parser.add_argument(
         "--host",
         default=DEFAULT_HOST,
@@ -198,6 +188,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # Port is environment-only (no CLI flag): set RUNSPACE_PORT to change it.
+    port = int(os.environ.get("RUNSPACE_PORT", DEFAULT_PORT))
+
     # Propagate session TTL (converted to seconds) to the server via environment variable
     os.environ["RUNSPACE_SESSION_TTL"] = str(args.session_ttl * SECONDS_IN_HOUR)
 
@@ -215,10 +208,10 @@ def main() -> None:
 
     # Start the server
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
-    print(f"Starting Runspace Agent server on http://{display_host}:{args.port}")
-    print(f"  UI:       http://{display_host}:{args.port}/ui")
-    print(f"  API docs: http://{display_host}:{args.port}/docs")
-    print(f"  ReDoc:    http://{display_host}:{args.port}/redoc\n")
+    print(f"Starting Runspace Agent server on http://{display_host}:{port}")
+    print(f"  UI:       http://{display_host}:{port}/ui")
+    print(f"  API docs: http://{display_host}:{port}/docs")
+    print(f"  ReDoc:    http://{display_host}:{port}/redoc\n")
 
     try:
         import uvicorn
@@ -233,7 +226,7 @@ def main() -> None:
     uvicorn.run(
         "runspace_agent.server.app:app",
         host=args.host,
-        port=args.port,
+        port=port,
         reload=args.watch,
     )
 
