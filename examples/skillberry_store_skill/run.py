@@ -97,7 +97,7 @@ EXTRA_SUMMARY_SECTIONS = [
         "issues identified in the traces.",
     ),
 ]
-PREINSTALLED_SKILLS = ["skill-creator"]
+REMOTE_SKILLS = ["https://github.com/anthropics/skills/tree/main/skills/skill-creator"]
 
 # Load tasks and build prompt — pass the task IDs you want to optimize for
 TASKS_FILE = CONTEXT_DIR / "tasks.json"
@@ -137,7 +137,7 @@ def run_server(mode: str = "container") -> None:
         "editable_description": EDITABLE_DESCRIPTION,
         "context_description": CONTEXT_DESCRIPTION,
         "extra_summary_sections": [s.model_dump() for s in EXTRA_SUMMARY_SECTIONS],
-        "preinstalled_skills": PREINSTALLED_SKILLS,
+        "remote_skills": REMOTE_SKILLS,
         "agent_type": "claude-code",
         "mode": mode,
         "output_zip": False,
@@ -210,7 +210,7 @@ async def run_library_container() -> None:
         context_description=CONTEXT_DESCRIPTION,
         extra_summary_sections=EXTRA_SUMMARY_SECTIONS,
         agent=agent,
-        preinstalled_skills=PREINSTALLED_SKILLS,
+        remote_skills=REMOTE_SKILLS,
         mode="container",
         output_zip=True,
         container_image="runspace-agent:latest",
@@ -249,7 +249,7 @@ async def run_library_local() -> None:
         context_description=CONTEXT_DESCRIPTION,
         extra_summary_sections=EXTRA_SUMMARY_SECTIONS,
         agent=agent,
-        preinstalled_skills=PREINSTALLED_SKILLS,
+        remote_skills=REMOTE_SKILLS,
         mode="local",
     )
 

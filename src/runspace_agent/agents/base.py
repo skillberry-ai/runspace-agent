@@ -71,9 +71,10 @@ class FilesystemAgent(Protocol):
             for Claude Code or ``".opencode/skills"`` for OpenCode.
             Used to determine where to copy user-provided skills and default skills.
         default_skills_dir: Absolute path to the directory containing the
-            agent's bundled/preinstalled skills on disk.  Each subdirectory
-            is a separate skill.  ``None`` means the agent ships no default
-            skills.
+            agent's bundled skills on disk.  Each subdirectory is a separate
+            skill.  ``None`` means the agent ships no bundled skills.  These
+            are surfaced via ``GET /skills`` but are not auto-loaded; provide
+            them per run via ``remote_skills`` or ``skills_dir``.
         npx_agent_name: The agent identifier the ``skills`` CLI expects after
             its ``-a`` flag (e.g. ``"claude"`` for Claude Code), used to
             install per-run ``remote_skills`` via ``npx skills add``.  ``None``

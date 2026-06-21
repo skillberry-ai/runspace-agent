@@ -24,7 +24,6 @@ def test_prepare_skills_with_user_dir(tmp_path: Path) -> None:
 
     result = prepare_skills(
         skills_dir=user_skills,
-        default_skills_dir=None,
         workspace_root=workspace,
         folder_name=".claude/skills",
     )
@@ -33,65 +32,59 @@ def test_prepare_skills_with_user_dir(tmp_path: Path) -> None:
     assert (result / "skill_a" / "SKILL.md").read_text() == "# Skill A"
 
 
-def _make_default_skills(tmp_path: Path) -> Path:
-    """Create a default-skills dir with two named skills."""
-    defaults = tmp_path / "defaults"
-    for name in ("skill-creator", "mcp-builder"):
-        d = defaults / name
-        d.mkdir(parents=True)
-        (d / "SKILL.md").write_text(f"# {name}", encoding="utf-8")
-    return defaults
-
-
-def test_preinstalled_skills_excluded_by_default(tmp_path: Path) -> None:
-    """Preinstalled skills are opt-in: None includes none."""
-    defaults = _make_default_skills(tmp_path)
-    workspace = tmp_path / "ws"
-    workspace.mkdir()
-
-    result = prepare_skills(
-        skills_dir=None,
-        default_skills_dir=defaults,
-        workspace_root=workspace,
-        folder_name=".claude/skills",
-        preinstalled_skills=None,
-    )
-
-    assert result is None
-
-
-def test_preinstalled_skills_selected_by_name(tmp_path: Path) -> None:
-    """Only explicitly named preinstalled skills are included."""
-    defaults = _make_default_skills(tmp_path)
-    workspace = tmp_path / "ws"
-    workspace.mkdir()
-
-    result = prepare_skills(
-        skills_dir=None,
-        default_skills_dir=defaults,
-        workspace_root=workspace,
-        folder_name=".claude/skills",
-        preinstalled_skills=["mcp-builder"],
-    )
-
-    assert result is not None
-    assert (result / "mcp-builder" / "SKILL.md").exists()
-    assert not (result / "skill-creator").exists()
-
-
-def test_prepare_skills_no_skills(tmp_path: Path) -> None:
-    """prepare_skills returns None when no skills are provided."""
+def test_prepare_skills_no_skills_dir(tmp_path: Path) -> None:
+    """prepare_skills returns None when no skills_dir is provided."""
     workspace = tmp_path / "workspace"
     workspace.mkdir()
 
     result = prepare_skills(
         skills_dir=None,
-        default_skills_dir=None,
         workspace_root=workspace,
         folder_name=".claude/skills",
     )
 
     assert result is None
+
+
+def test_prepare_skills_missing_dir(tmp_path: Path) -> None:
+    """prepare_skills returns None when skills_dir does not exist."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    result = prepare_skills(
+        skills_dir=tmp_path / "nonexistent",
+        workspace_root=workspace,
+        folder_name=".claude/skills",
+    )
+
+    assert result is None
+
+
+def test_prepare_skills_replaces_existing(tmp_path: Path) -> None:
+    """A re-copied skill replaces any existing copy in the target."""
+    user_skills = tmp_path / "skills"
+    skill = user_skills / "my_skill"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text("new content", encoding="utf-8")
+
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    # Pre-seed a stale copy in the target.
+    stale = workspace / ".claude" / "skills" / "my_skill"
+    stale.mkdir(parents=True)
+    (stale / "SKILL.md").write_text("stale", encoding="utf-8")
+    (stale / "old.txt").write_text("leftover", encoding="utf-8")
+
+    result = prepare_skills(
+        skills_dir=user_skills,
+        workspace_root=workspace,
+        folder_name=".claude/skills",
+    )
+
+    assert result is not None
+    assert (result / "my_skill" / "SKILL.md").read_text() == "new content"
+    # The stale extra file is gone after replacement.
+    assert not (result / "my_skill" / "old.txt").exists()
 
 
 def test_prepare_skills_creates_folder_structure(tmp_path: Path) -> None:
@@ -107,7 +100,6 @@ def test_prepare_skills_creates_folder_structure(tmp_path: Path) -> None:
 
     result = prepare_skills(
         skills_dir=user_skills,
-        default_skills_dir=None,
         workspace_root=workspace,
         folder_name=".opencode/skills",
     )

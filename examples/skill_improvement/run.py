@@ -86,7 +86,7 @@ EXTRA_SUMMARY_SECTIONS = [
         "occur and how they were handled in this session.",
     ),
 ]
-PREINSTALLED_SKILLS = ["skill-creator"]
+REMOTE_SKILLS = ["https://github.com/anthropics/skills/tree/main/skills/skill-creator"]
 
 
 def _mcp_servers(mode: str) -> dict:
@@ -153,7 +153,7 @@ def run_server(mode: str = "container") -> None:
         "editable_description": EDITABLE_DESCRIPTION,
         "context_description": CONTEXT_DESCRIPTION,
         "extra_summary_sections": [s.model_dump() for s in EXTRA_SUMMARY_SECTIONS],
-        "preinstalled_skills": PREINSTALLED_SKILLS,
+        "remote_skills": REMOTE_SKILLS,
         "agent_type": "claude-code",
         "mode": mode,
         "output_zip": False,
@@ -231,7 +231,7 @@ async def run_library_container() -> None:
         context_description=CONTEXT_DESCRIPTION,
         extra_summary_sections=EXTRA_SUMMARY_SECTIONS,
         agent=agent,
-        preinstalled_skills=PREINSTALLED_SKILLS,
+        remote_skills=REMOTE_SKILLS,
         mode="container",
         output_zip=True,
         container_image="runspace-agent:latest",
@@ -272,7 +272,7 @@ async def run_library_local() -> None:
         context_description=CONTEXT_DESCRIPTION,
         extra_summary_sections=EXTRA_SUMMARY_SECTIONS,
         agent=agent,
-        preinstalled_skills=PREINSTALLED_SKILLS,
+        remote_skills=REMOTE_SKILLS,
         mode="local",
     )
 

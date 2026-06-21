@@ -36,10 +36,6 @@ class RunspaceSession(BaseModel):
         agent_options: A :class:`~claude_code_sdk.ClaudeCodeOptions` instance
             passed to the default agent when ``agent`` is ``None``.
         skills_dir: Optional directory of custom skills to load into the workspace.
-        preinstalled_skills: Which preinstalled skills to include.
-            Opt-in: ``None`` (default) or ``[]`` includes none.  Pass an
-            explicit list of names to include only those
-            (e.g. ``["mcp-builder"]``).
         mode: Execution mode — ``"local"`` or ``"container"``.
         output_zip: Whether to zip the editable directory after the agent runs.
         container_image: Docker image for container mode.
@@ -58,7 +54,6 @@ class RunspaceSession(BaseModel):
     agent_type: str = "claude-code"
     agent_options: Any = None  # Agent-specific options (e.g. ClaudeCodeOptions)
     skills_dir: Path | None = None
-    preinstalled_skills: list[str] | None = None
     remote_skills: list[str] | None = None
     mode: Literal["local", "container"] = "local"
     output_zip: bool = False

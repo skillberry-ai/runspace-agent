@@ -27,7 +27,6 @@ class RunRequest(BaseModel):
     editable_description: str = ""
     context_description: str = ""
     skills_dir: str | None = None
-    preinstalled_skills: list[str] | None = None
     # Remote skill sources installed at run setup via `npx skills add`
     # (e.g. "vercel-labs/agent-skills", GitHub URLs, repo subpaths).
     remote_skills: list[str] | None = None
@@ -81,7 +80,7 @@ class SessionDetail(SessionInfo):
 
 
 class SkillInfo(BaseModel):
-    """A preinstalled skill."""
+    """A bundled skill."""
 
     name: str
     description: str = ""

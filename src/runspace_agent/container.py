@@ -131,10 +131,8 @@ def _run_container_blocking(
     # Prepare skills inside agent workspace
     prepare_skills(
         skills_dir=session.skills_dir,
-        default_skills_dir=agent.default_skills_dir,
         workspace_root=agent_workspace,
         folder_name=agent.skills_folder_name,
-        preinstalled_skills=session.preinstalled_skills,
     )
 
     # Build prompt with container-internal paths (agent workspace)
