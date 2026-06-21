@@ -1,7 +1,8 @@
 """Skill loading and workspace preparation.
 
-Handles discovery of bundled default skills (skill-creator, mcp-builder)
-and copying them into the agent's workspace alongside user-provided skills.
+Copies user-provided skills into the agent's workspace and installs remote
+skills via the ``skills`` CLI.  Bundled skills (skill-creator, mcp-builder)
+are no longer auto-loaded; provide them via ``remote_skills`` or ``skills_dir``.
 """
 
 from __future__ import annotations
@@ -80,61 +81,36 @@ def parse_skill_frontmatter(skill_dir: Path) -> dict[str, str]:
 
 def prepare_skills(
     skills_dir: Path | None,
-    default_skills_dir: Path | None,
     workspace_root: Path,
     folder_name: str,
-    preinstalled_skills: list[str] | None = None,
 ) -> Path | None:
-    """Copy skills into the workspace for the agent to discover.
+    """Copy user-provided skills into the workspace for the agent to discover.
 
     Parameters:
         skills_dir: Optional user-provided directory containing custom
             skills.  Each subdirectory is treated as a separate skill.
-        default_skills_dir: Optional path to the agent's bundled default
-            skills.  ``None`` to skip defaults entirely.
+            ``None`` or a non-directory path loads nothing.
         workspace_root: The session workspace directory.
         folder_name: Agent-specific skills folder name relative to
             *workspace_root* (e.g. ``".claude/skills"``).
-        preinstalled_skills: Which preinstalled skills to include.
-            Preinstalled skills are **opt-in**: ``None`` (default) or an
-            empty list includes none.  Pass an explicit list of names to
-            include only those (e.g. ``["mcp-builder"]``).
 
     Returns:
-        The created skills directory path, or ``None`` if no skills
-        were loaded.
+        The created skills directory path, or ``None`` if no
+        *skills_dir* was provided.
     """
-    if not skills_dir and not default_skills_dir:
-        return None
-
-    # Preinstalled skills are opt-in: only included when explicitly named.
-    # None (default) or an empty list means "no preinstalled skills".
-    if not preinstalled_skills:
-        default_skills_dir = None
-
-    if not skills_dir and not default_skills_dir:
+    if not skills_dir or not skills_dir.is_dir():
         return None
 
     target = workspace_root / folder_name
     target.mkdir(parents=True, exist_ok=True)
 
-    # Copy the selected preinstalled skills first
-    if default_skills_dir:
-        for skill in get_default_skills(default_skills_dir):
-            if not preinstalled_skills or skill.name not in preinstalled_skills:
-                continue
-            dest = target / skill.name
-            if not dest.exists():
-                shutil.copytree(skill.path, dest)
-
-    # Copy user-provided skills (may override defaults)
-    if skills_dir and skills_dir.is_dir():
-        for child in skills_dir.iterdir():
-            if child.is_dir():
-                dest = target / child.name
-                if dest.exists():
-                    shutil.rmtree(dest)
-                shutil.copytree(child, dest)
+    # Copy each user-provided skill, replacing any existing copy.
+    for child in skills_dir.iterdir():
+        if child.is_dir():
+            dest = target / child.name
+            if dest.exists():
+                shutil.rmtree(dest)
+            shutil.copytree(child, dest)
 
     return target
 

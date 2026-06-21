@@ -171,7 +171,7 @@ session = RunspaceSession(
     prompt="Improve the code based on the traces in the context directory.",
     agent=agent,
     # Pull skills into the agent at run setup via `npx skills add`.
-    # Combine with preinstalled_skills / skills_dir — see Skills below.
+    # Combine with skills_dir — see Skills below.
     remote_skills=["vercel-labs/agent-skills"],
 )
 
@@ -255,25 +255,9 @@ Skills are agent-specific tool extensions. Each `FilesystemAgent` declares a
 `skills_folder_name` (e.g. `.claude/skills` for Claude Code) and the library
 copies skills into the workspace.
 
-There are **three ways** to give an agent skills, and you can use any or all:
+There are **two ways** to give an agent skills, and you can use either or both:
 
-#### 1. Preinstalled skills (`preinstalled_skills`)
-
-Each agent ships with a set of bundled skills. The `ClaudeCodeAgent` ships with:
-- **skill-creator** — Create, modify, improve, and evaluate skills
-- **mcp-builder** — Build MCP servers in Python (FastMCP) or Node/TypeScript
-
-Preinstalled skills are **opt-in** — none are included unless you select them
-by name. Only the names you list are loaded:
-```python
-# No preinstalled skills (default)
-session = RunspaceSession(...)
-
-# Include only the ones you select
-session = RunspaceSession(..., preinstalled_skills=["mcp-builder"])
-```
-
-#### 2. Your own skills (`skills_dir`)
+#### 1. Your own skills (`skills_dir`)
 
 Point `skills_dir` at a directory that contains one subdirectory per skill
 (each with its own `SKILL.md`):
@@ -288,19 +272,10 @@ my-skills/
 session = RunspaceSession(..., skills_dir=Path("my-skills"))
 ```
 
-Combine both — select preinstalled skills *and* supply your own directory.
-Custom skills override preinstalled ones with the same name:
-```python
-session = RunspaceSession(
-    ...,
-    preinstalled_skills=["mcp-builder"],
-    skills_dir=Path("my-skills"),
-)
-```
+Use `GET /skills` to list the bundled skills shipped with the package (these
+are loadable via `remote_skills` or `skills_dir`).
 
-Use `GET /skills` to list the available preinstalled skills via the API.
-
-#### 3. Remote skills (`remote_skills`)
+#### 2. Remote skills (`remote_skills`)
 
 Pull skills straight from a repo at run setup using the
 [`skills` CLI](https://skills.sh) (`npx skills add`). `remote_skills` is a list
@@ -335,7 +310,19 @@ Notes:
   for container runs).
 - A source that fails to install **fails the run** — remote skills you asked
   for are treated as required setup, not best-effort.
-- Combine freely with `preinstalled_skills` and `skills_dir`.
+- Combine freely with `skills_dir`.
+
+The bundled **skill-creator** and **mcp-builder** skills are no longer
+auto-loaded; pull them in via `remote_skills` from their GitHub sources:
+```python
+session = RunspaceSession(
+    ...,
+    remote_skills=[
+        "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
+        "https://github.com/anthropics/skills/tree/main/skills/mcp-builder",
+    ],
+)
+```
 
 ### Sandbox
 
@@ -456,7 +443,7 @@ runspace layer is Anthropic-specific.
 | `GET` | `/sessions/{id}/diff/{path}` | Diff for a single file |
 | `GET` | `/sessions/{id}/conversation` | Agent conversation trajectory (JSON) |
 | `GET` | `/sessions/{id}/summary` | Agent-generated session summary |
-| `GET` | `/skills` | List preinstalled/bundled skills |
+| `GET` | `/skills` | List bundled skills (loadable via remote_skills or skills_dir) |
 | `GET` | `/ui` | Web UI (React SPA) |
 | `GET` | `/docs` | Swagger interactive API docs |
 | `GET` | `/redoc` | ReDoc API docs |

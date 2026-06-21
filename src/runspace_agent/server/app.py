@@ -101,7 +101,6 @@ async def create_run(req: RunRequest) -> SessionInfo:
         agent_type=req.agent_type,
         agent_options=agent_options,
         skills_dir=Path(req.skills_dir) if req.skills_dir else None,
-        preinstalled_skills=req.preinstalled_skills,
         remote_skills=req.remote_skills,
         mode=mode,  # type: ignore[arg-type]
         output_zip=req.output_zip,
@@ -287,7 +286,7 @@ _BUNDLED_SKILLS_DIR = Path(__file__).resolve().parent.parent.parent.parent / ".c
 
 @app.get("/skills", response_model=list[SkillInfo])
 async def list_skills() -> list[SkillInfo]:
-    """List preinstalled/bundled skills shipped with the package."""
+    """List bundled skills (loadable via remote_skills or skills_dir)."""
     from runspace_agent.skills import get_default_skills, parse_skill_frontmatter
 
     if not _BUNDLED_SKILLS_DIR.is_dir():

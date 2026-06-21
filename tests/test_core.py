@@ -17,7 +17,6 @@ async def test_run_agent_with_mock(tmp_editable: Path, tmp_context: Path, mock_a
         context_dir=tmp_context,
         prompt="Do something useful.",
         agent=mock_agent,
-        preinstalled_skills=[],
     )
     result = await run_agent(session)
     assert result.success
@@ -34,7 +33,6 @@ async def test_run_agent_failing(tmp_editable: Path, tmp_context: Path, failing_
         context_dir=tmp_context,
         prompt="This will fail.",
         agent=failing_agent,
-        preinstalled_skills=[],
     )
     result = await run_agent(session)
     assert not result.success
@@ -49,7 +47,6 @@ async def test_run_agent_missing_editable(tmp_path: Path, tmp_context: Path, moc
         context_dir=tmp_context,
         prompt="test",
         agent=mock_agent,
-        preinstalled_skills=[],
     )
     result = await run_agent(session)
     assert not result.success
@@ -64,7 +61,6 @@ async def test_run_agent_missing_context(tmp_editable: Path, tmp_path: Path, moc
         context_dir=tmp_path / "nonexistent",
         prompt="test",
         agent=mock_agent,
-        preinstalled_skills=[],
     )
     result = await run_agent(session)
     assert not result.success
@@ -79,7 +75,6 @@ async def test_run_agent_output_zip(tmp_editable: Path, tmp_context: Path, mock_
         context_dir=tmp_context,
         prompt="Do something.",
         agent=mock_agent,
-        preinstalled_skills=[],
         output_zip=True,
     )
     result = await run_agent(session)

@@ -65,10 +65,8 @@ async def run_local(
     # Prepare skills inside agent workspace
     skills_dir = prepare_skills(
         skills_dir=session.skills_dir,
-        default_skills_dir=agent.default_skills_dir,
         workspace_root=agent_workspace,
         folder_name=agent.skills_folder_name,
-        preinstalled_skills=session.preinstalled_skills,
     )
 
     # Install any remote skills via `npx skills add` on the host

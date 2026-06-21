@@ -19,7 +19,6 @@ async def test_local_workspace_setup(tmp_editable: Path, tmp_context: Path, mock
         context_dir=tmp_context,
         prompt="Modify the skill.",
         agent=mock_agent,
-        preinstalled_skills=[],
         mode="local",
     )
     result = await run_agent(session)
@@ -40,7 +39,6 @@ async def test_local_preserves_context(tmp_editable: Path, tmp_context: Path, mo
         context_dir=tmp_context,
         prompt="Read the traces.",
         agent=mock_agent,
-        preinstalled_skills=[],
         mode="local",
     )
     result = await run_agent(session)
