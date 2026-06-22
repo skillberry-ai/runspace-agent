@@ -183,6 +183,10 @@ def _run_container_blocking(
             str(workspace_root): {"bind": "/workspace", "mode": "rw"},
         },
         environment=env_vars,
+        # Map host.docker.internal to the host so the agent can reach services
+        # (e.g. MCP servers) running on the host. Required on Linux, where the
+        # name does not resolve by default; harmless on Docker Desktop.
+        extra_hosts={"host.docker.internal": "host-gateway"},
         cap_drop=["ALL"],
         security_opt=["no-new-privileges"],
         mem_limit=session.container_memory,
