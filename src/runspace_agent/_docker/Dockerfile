@@ -8,31 +8,24 @@
 #   ./requirements.txt      runtime deps (base + the [claude] extra)
 #   ./runspace_agent/       the installed package source tree
 #
+# The heavy, slow-changing layers (Python + Node.js + Claude Code CLI + uv + the
+# non-root user) live in the published base image below, built via
+# scripts/publish-base-image.sh. This image only layers Python deps + the package
+# source on top, so local builds are fast and avoid apt/npm registry rate limits.
+#
 # The image is built automatically by `runspace-srv` (or `--rebuild`).
-FROM python:3.11-slim
+FROM ghcr.io/skillberry-ai/runspace-agent-base:py3.11-node20
 
-# System deps + Node.js (required for the Claude Code runtime)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl jq && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y --no-install-recommends nodejs && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install Claude Code CLI globally
-RUN npm install -g @anthropic-ai/claude-code
-
-# Install Python deps, then drop in the package source (PYTHONPATH instead of a
-# pip install, so no pyproject.toml is needed in the build context)
+# Install Python deps with uv (provided by the base image), then drop in the
+# package source (PYTHONPATH instead of a pip install, so no pyproject.toml is
+# needed in the build context)
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv pip install --system --no-cache -r requirements.txt
 COPY runspace_agent/ ./runspace_agent/
 ENV PYTHONPATH=/app
 
-# Create non-root user (Claude Code refuses --dangerously-skip-permissions as root)
-RUN useradd -m -s /bin/bash agent && \
-    mkdir -p /workspace && chown agent:agent /workspace
-
+# The 'agent' user and /workspace are created in the base image.
 USER agent
 WORKDIR /workspace
 ENTRYPOINT ["python", "-m", "runspace_agent.entrypoint"]

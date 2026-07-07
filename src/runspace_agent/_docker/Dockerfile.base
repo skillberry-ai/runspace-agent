@@ -1,0 +1,33 @@
+# Base image for runspace-agent: the slow-changing runtime layers.
+#
+# Carries Python + Node.js + the Claude Code CLI + uv + the non-root user —
+# everything that rarely changes and is expensive/flaky to install (apt, the
+# NodeSource script, `npm install -g`). The per-build runspace-agent image
+# (_docker/Dockerfile) starts FROM this and only layers Python deps + the
+# package source on top, so local builds are fast and never hit apt/npm
+# registry rate limits.
+#
+# Published multi-arch to GHCR via scripts/publish-base-image.sh. Rebuild and
+# republish only when bumping Python, Node, the Claude Code CLI, or uv.
+FROM python:3.11-slim
+
+# System deps + Node.js (required for the Claude Code runtime). git is needed
+# because remote skills are installed at container startup via `npx skills add`,
+# which clones the skill sources from GitHub.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl jq git && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install the Claude Code CLI globally. The claude-code-sdk Python package does
+# not talk to the API directly — it spawns this CLI as a subprocess (see
+# runspace_agent/agents/claude_code/agent.py), so the CLI is required at runtime.
+RUN npm install -g @anthropic-ai/claude-code
+
+# uv: fast Python installer used by the runtime image's `uv pip install`.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Non-root user (Claude Code refuses --dangerously-skip-permissions as root)
+RUN useradd -m -s /bin/bash agent && \
+    mkdir -p /workspace && chown agent:agent /workspace

@@ -577,6 +577,32 @@ The build context is assembled from the installed package, so this works the sam
 whether runspace-agent was installed editable, from git, or from a wheel — no repo
 checkout required.
 
+### Base image
+
+To keep local builds fast and avoid apt/npm registry rate limits, the slow-changing
+layers (Python + Node.js + the Claude Code CLI + uv + the non-root user) live in a
+prebuilt multi-arch **base image** published to GHCR:
+
+```
+ghcr.io/skillberry-ai/runspace-agent-base:py3.11-node20
+```
+
+`_docker/Dockerfile` starts `FROM` that base and only layers the Python deps and the
+package source on top. End users don't build the base — it's pulled automatically.
+
+Maintainers republish the base **only when bumping Python, Node, the Claude Code CLI,
+or uv** (not on every code change). It requires Docker buildx and a GHCR login with
+`write:packages`:
+
+```bash
+# One-time: create a multi-arch builder and log in
+docker buildx create --name runspace --use
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u <github-username> --password-stdin
+
+# Build linux/amd64 + linux/arm64 and push (tags: py3.11-node20, dated, latest)
+scripts/publish-base-image.sh
+```
+
 Containers auto-remove after each run. All output (conversation, diffs, files) is
 persisted on the host via the volume mount — the container is just a throwaway
 execution environment.
